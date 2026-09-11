@@ -45,7 +45,7 @@ public static class ExternalDependencyInstaller
 
     private static void Initialize()
     {
-        if (_running)
+        if (_running || EditorApplication.isPlayingOrWillChangePlaymode)
             return;
 
         _running = true;
