@@ -8,7 +8,7 @@ using UnityEditor;
 using UnityEngine;
 
 [InitializeOnLoad]
-public static class ExternalDependencyInstaller
+public class ExternalDependencyInstaller : EditorWindow
 {
     private const string DownloadDirectory =
         "Packages/Downloaded";
@@ -37,15 +37,19 @@ public static class ExternalDependencyInstaller
 
     private static bool _running;
 
+    
     static ExternalDependencyInstaller()
     {
-        EditorApplication.delayCall += Initialize;
+        if (EditorApplication.isPlayingOrWillChangePlaymode == false)
+        {
+            EditorApplication.delayCall += Initialize;
+        }
     }
 
 
     private static void Initialize()
     {
-        if (_running || EditorApplication.isPlayingOrWillChangePlaymode)
+        if (_running)
             return;
 
         _running = true;
@@ -184,7 +188,7 @@ public static class ExternalDependencyInstaller
         return Directory.Exists(
             Path.Combine(
                 Application.dataPath,
-                "SRDisplay"
+                "SRDisplayUnityPlugin"
             )
         );
     }
