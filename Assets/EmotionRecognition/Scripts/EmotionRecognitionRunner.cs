@@ -122,7 +122,7 @@ public class EmotionRecognitionRunner : MonoBehaviour
             {
                 currentEmotion = Emotion.SURPRISED;
             }
-            else if (browDown > 0.3f)
+            else if (browDown > 0.5f)
             {
                 currentEmotion = Emotion.ANGRY;
             }
@@ -132,6 +132,7 @@ public class EmotionRecognitionRunner : MonoBehaviour
             }
 
             visualizer.UpdateVisualizer(result.faceLandmarks[0].landmarks, currentEmotion);
+            EmotionBridge.SetEmotion(currentEmotion);
         }
     }
 

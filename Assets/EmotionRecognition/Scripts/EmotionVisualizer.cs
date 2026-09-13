@@ -7,7 +7,6 @@ public class EmotionVisualizer : MonoBehaviour
 {
     [Header("Mesh Properties")]
     [SerializeField] private Mesh sourceMesh; // Mesh used for dynamic feedback
-    [SerializeField] private float scaleFactor = 10f;
 
     [Header("Emotion Colors")]
     [SerializeField] private Color happyColor = Color.lightYellow;
@@ -89,9 +88,9 @@ public class EmotionVisualizer : MonoBehaviour
         {
             NormalizedLandmark lm = currentLandmarks[i];
 
-            float x = (0.5f - lm.x) * scaleFactor;
-            float y = (0.5f - lm.y) * scaleFactor;
-            float z = -lm.z * scaleFactor;
+            float x = -(0.5f - lm.x);
+            float y = (0.5f - lm.y);
+            float z = lm.z;
 
             vertices[i] = new Vector3(x, y, z);
         }
