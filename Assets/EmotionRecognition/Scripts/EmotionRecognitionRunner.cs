@@ -62,6 +62,13 @@ public class EmotionRecognitionRunner : MonoBehaviour
             throw new System.Exception("Web Camera devices are not found");
         }
         var webCamDevice = WebCamTexture.devices[0];
+        for (int i = 0; i < WebCamTexture.devices.Length; i++)
+        {
+            print(WebCamTexture.devices[i].name);
+            if (WebCamTexture.devices[i].name == "Logi C270 HD WebCam") {
+                webCamDevice = WebCamTexture.devices[i];
+            }
+        }
         webCamTexture = new WebCamTexture(webCamDevice.name, width, height, fps);
         webCamTexture.Play();
 
