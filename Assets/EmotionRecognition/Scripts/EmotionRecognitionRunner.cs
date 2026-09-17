@@ -25,6 +25,7 @@ public class EmotionRecognitionRunner : MonoBehaviour
     [SerializeField] private int fps = 30;
     [SerializeField] TextAsset modelAsset;
     [SerializeField] EmotionVisualizer visualizer;
+    [SerializeField] private int camera_id;
 
     WebCamTexture webCamTexture;
     FaceLandmarker faceLandmarker;
@@ -59,16 +60,20 @@ public class EmotionRecognitionRunner : MonoBehaviour
     {
         if (WebCamTexture.devices.Length == 0)
         {
-            throw new System.Exception("Web Camera devices are not found");
+            throw new System.Exception("No Web Camera devices found.");
         }
-        var webCamDevice = WebCamTexture.devices[0];
-        for (int i = 0; i < WebCamTexture.devices.Length; i++)
+        if (WebCamTexture.devices.Length < camera_id+1)
         {
-            print(WebCamTexture.devices[i].name);
-            if (WebCamTexture.devices[i].name == "Logi C270 HD WebCam") {
-                webCamDevice = WebCamTexture.devices[i];
-            }
+            throw new System.Exception("Specified Web Camera device not found. Check Camera ID and connection.");
         }
+        var webCamDevice = WebCamTexture.devices[camera_id];
+        //for (int i = 0; i < WebCamTexture.devices.Length; i++)   // If having trouble with selecting camera, you can use this loop along with the device name to manually select
+        //{
+        //    print(WebCamTexture.devices[i].name);
+        //    if (WebCamTexture.devices[i].name == "Logi C270 HD WebCam") {
+        //        webCamDevice = WebCamTexture.devices[i];
+        //    }
+        //}
         webCamTexture = new WebCamTexture(webCamDevice.name, width, height, fps);
         webCamTexture.Play();
 
