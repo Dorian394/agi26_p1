@@ -51,7 +51,7 @@ public class EnemiesManager : MonoBehaviour
                 if (EmotionBridge.GetEmotion() == enemyEmotion)
                 {
                     activeEnemies.Dequeue();
-                    SpawnDeathEffect(nearestEnemy.transform.localPosition);
+                    SpawnDeathEffect(nearestEnemy.transform.position);
                     Destroy(nearestEnemy);
                 }
             }
