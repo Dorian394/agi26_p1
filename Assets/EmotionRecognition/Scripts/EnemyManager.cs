@@ -7,6 +7,7 @@ public class EnemiesManager : MonoBehaviour
 {
     [Header("Spawn Settings")]
     [SerializeField] private GameObject enemyPrefab;
+    [SerializeField] private GameObject deathEffectPrefab;
     [SerializeField] private GameObject target;
     [SerializeField] private float defaultSpawnInterval = 2f;
     [SerializeField] private float spawnSizeX = 10f;
@@ -50,6 +51,7 @@ public class EnemiesManager : MonoBehaviour
                 if (EmotionBridge.GetEmotion() == enemyEmotion)
                 {
                     activeEnemies.Dequeue();
+                    SpawnDeathEffect(nearestEnemy.transform.localPosition);
                     Destroy(nearestEnemy);
                 }
             }
@@ -97,6 +99,13 @@ public class EnemiesManager : MonoBehaviour
 
         // Adding the enemy to the queue (for management)
         activeEnemies.Enqueue(newEnemyObj);
+    }
+
+    private void SpawnDeathEffect(Vector3 position)
+    {
+        if (deathEffectPrefab == null) return;
+
+        GameObject newEffectObj = Instantiate(deathEffectPrefab, position, Quaternion.identity);
     }
 
     // Debug: draw spawn area
