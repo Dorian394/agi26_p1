@@ -12,15 +12,17 @@ public class EmotionVisualizer : MonoBehaviour
     [SerializeField] private Color happyColor = Color.lightYellow;
     [SerializeField] private Color surprisedColor = Color.lavender;
     [SerializeField] private Color angryColor = Color.softRed;
+    [SerializeField] private Color sadColor = Color.softBlue;
     [SerializeField] private Color defaultColor = Color.lightGray;
 
     // Object-related fields
-    MeshRenderer meshRenderer; // Mesh renderer
+    Material faceMaterial; // Mesh renderer
     private Mesh faceMesh; // Mesh used to store a copy of the input mesh
     private Vector3[] vertices; // List of vertices used to compute the new mesh
 
     // Bridge with the Runner script
     private List<NormalizedLandmark> landmarkListTemp; // Temp buffer used to receive the new Landmarks
+    private List<NormalizedLandmark> currentLandmarks;
     private bool hasNewData = false; // Flag set to true when new landmarks are available
     private readonly object lockObj = new(); // Lock to synchronize the accesses to the shared array landmarkListTemp
     Emotion currentEmotion; // Current emotion
@@ -37,6 +39,10 @@ public class EmotionVisualizer : MonoBehaviour
             return;
         }
 
+        // Init the lists
+        landmarkListTemp = new();
+        currentLandmarks = new();
+
         // Create a copy of the input mesh and apply it to the object
         faceMesh = new Mesh
         {
@@ -50,7 +56,7 @@ public class EmotionVisualizer : MonoBehaviour
         GetComponent<MeshFilter>().mesh = faceMesh;
 
         // Get the mesh renderer for future updates
-        meshRenderer = GetComponent<MeshRenderer>();
+        faceMaterial= GetComponent<MeshRenderer>().material;
     }
 
     public void UpdateVisualizer(List<NormalizedLandmark> receivedLandmarkList, Emotion emotion)
@@ -60,7 +66,11 @@ public class EmotionVisualizer : MonoBehaviour
         // Ensure mutual exclusion
         lock (lockObj)
         {
-            this.landmarkListTemp = receivedLandmarkList;
+            // Copy the lists (not just the reference)
+            landmarkListTemp.Clear();
+            landmarkListTemp.AddRange(receivedLandmarkList);
+
+
             this.currentEmotion = emotion;
             this.hasNewData = true;
         }
@@ -70,14 +80,13 @@ public class EmotionVisualizer : MonoBehaviour
     {
         if (!hasNewData || faceMesh == null) return;
 
-        List<NormalizedLandmark> currentLandmarks = null;
-
         // Ensure mutual exclusion
         lock (lockObj)
         {
-            currentLandmarks = landmarkListTemp;
-            hasNewData = false;
+            currentLandmarks.Clear();
+            currentLandmarks.AddRange(landmarkListTemp);
         }
+        hasNewData = false;
 
         if (currentLandmarks == null) return;
 
@@ -105,8 +114,9 @@ public class EmotionVisualizer : MonoBehaviour
             Emotion.HAPPY => happyColor,
             Emotion.ANGRY => angryColor,
             Emotion.SURPRISED => surprisedColor,
+            Emotion.SAD => sadColor,
             _ => defaultColor,
         };
-        meshRenderer.material.SetColor("_BaseColor", color);
+        faceMaterial.SetColor("_BaseColor", color);
     }
 }

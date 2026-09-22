@@ -8,12 +8,15 @@ using Mediapipe.Unity.Experimental;
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.IO;
+using Unity.Collections;
 using UnityEngine;
 
 public enum Emotion
 {
     NEUTRAL = 0,
     HAPPY,
+    SAD,
     ANGRY,
     SURPRISED
 }
@@ -25,15 +28,19 @@ public class EmotionRecognitionRunner : MonoBehaviour
     [SerializeField] private int fps = 30;
     [SerializeField] TextAsset modelAsset;
     [SerializeField] EmotionVisualizer visualizer;
+    [SerializeField] bool trainModel;
 
     WebCamTexture webCamTexture;
     FaceLandmarker faceLandmarker;
     TextureFrame textureFrame;
     Emotion currentEmotion;
+    ClassificationModel classificationModel;
 
     IEnumerator Start()
     {
         // Init
+        classificationModel = new ClassificationModel(trainModel, modelAsset);
+
         yield return CreateWebCamTexture();
         textureFrame = new TextureFrame(webCamTexture.width, webCamTexture.height, TextureFormat.RGBA32);
 
@@ -91,11 +98,13 @@ public class EmotionRecognitionRunner : MonoBehaviour
         faceLandmarker.DetectAsync(image, stopwatch.ElapsedMilliseconds);
     }
 
+
     // Emotion classification
     private void OnFaceLandmarkerResult(FaceLandmarkerResult result, Mediapipe.Image image, long timestamp)
     {
         if (result.faceLandmarks != null && result.faceBlendshapes.Count > 0)
         {
+
             var blendshapes = result.faceBlendshapes[0].categories;
 
             // Get some blendshape values
@@ -113,7 +122,7 @@ public class EmotionRecognitionRunner : MonoBehaviour
             float smile = (smileLeft + smileRight) / 2.0f;
             float browUp = (browInnerUp + browOuterUpLeft + browOuterUpRight) / 3.0f;
 
-            // Recognize emotion
+            /*/ Recognize emotion 
             if (smile > 0.6f)
             {
                 currentEmotion = Emotion.HAPPY;
@@ -129,7 +138,29 @@ public class EmotionRecognitionRunner : MonoBehaviour
             else
             {
                 currentEmotion = Emotion.NEUTRAL;
+            }*/
+
+            // Recognize emotion
+            switch (classificationModel.getEmotion(blendshapes))
+            {
+                case 0:
+                    currentEmotion = Emotion.NEUTRAL;
+                    break;
+                case 1:
+                    currentEmotion = Emotion.HAPPY;
+                    break;
+                case 2:
+                    currentEmotion = Emotion.SAD;
+                    break;
+                case 3:
+                    currentEmotion = Emotion.ANGRY;
+                    break;
+                case 4:
+                    currentEmotion = Emotion.SURPRISED;
+                    break;
+
             }
+
 
             visualizer.UpdateVisualizer(result.faceLandmarks[0].landmarks, currentEmotion);
             EmotionBridge.SetEmotion(currentEmotion);
