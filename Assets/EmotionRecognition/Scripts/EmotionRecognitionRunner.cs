@@ -14,6 +14,7 @@ using System.IO;
 using System.Linq;
 using Unity.Collections;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 public enum Emotion
 {
@@ -33,6 +34,7 @@ public class EmotionRecognitionRunner : MonoBehaviour
     [SerializeField] TextAsset modelAsset;
     [SerializeField] EmotionVisualizer visualizer;
     [SerializeField] private EmotionUIBars uiBars = null;
+    [SerializeField] private bool useHardcodedThresholds;
     [SerializeField] private bool useMachineLearning;
     bool trainModel = false;
 
@@ -113,7 +115,12 @@ public class EmotionRecognitionRunner : MonoBehaviour
 
             var blendshapes = result.faceBlendshapes[0].categories;
 
-            currentEmotion = detectEmotionHardcode(blendshapes);
+            currentEmotion = Emotion.UNKNOWN;
+
+            if (useHardcodedThresholds && currentEmotion == Emotion.UNKNOWN)
+            {
+                currentEmotion = detectEmotionHardcode(blendshapes);
+            }
 
             if (useMachineLearning && currentEmotion == Emotion.UNKNOWN)
             {
@@ -218,55 +225,126 @@ public class EmotionRecognitionRunner : MonoBehaviour
 
     private Emotion detectEmotionHardcode(List<Category> blendshapes)
     {
-        // Extract Blendshapes
-        float smileLeft = GetBlendshapeValue(blendshapes, "mouthSmileLeft");
-        float smileRight = GetBlendshapeValue(blendshapes, "mouthSmileRight");
+        // FACS-inspired facial expression recognition.
+        float mouthSmileLeft = GetBlendshapeValue(blendshapes, "mouthSmileLeft");
+        float mouthSmileRight = GetBlendshapeValue(blendshapes, "mouthSmileRight");
+
         float mouthFrownLeft = GetBlendshapeValue(blendshapes, "mouthFrownLeft");
         float mouthFrownRight = GetBlendshapeValue(blendshapes, "mouthFrownRight");
-        float jawOpen = GetBlendshapeValue(blendshapes, "jawOpen");
 
-        float eyeSquintLeft = GetBlendshapeValue(blendshapes, "eyeSquintLeft");
-        float eyeSquintRight = GetBlendshapeValue(blendshapes, "eyeSquintRight");
-        float eyeWideLeft = GetBlendshapeValue(blendshapes, "eyeWideLeft");
-        float eyeWideRight = GetBlendshapeValue(blendshapes, "eyeWideRight");
+        float mouthPressLeft = GetBlendshapeValue(blendshapes, "mouthPressLeft");
+        float mouthPressRight = GetBlendshapeValue(blendshapes, "mouthPressRight");
+
+        float cheekSquintLeft = GetBlendshapeValue(blendshapes, "cheekSquintLeft");
+        float cheekSquintRight = GetBlendshapeValue(blendshapes, "cheekSquintRight");
+
+        float mouthShrugLower = GetBlendshapeValue(blendshapes, "mouthShrugLower");
 
         float browDownLeft = GetBlendshapeValue(blendshapes, "browDownLeft");
         float browDownRight = GetBlendshapeValue(blendshapes, "browDownRight");
+
         float browInnerUp = GetBlendshapeValue(blendshapes, "browInnerUp");
+
         float browOuterUpLeft = GetBlendshapeValue(blendshapes, "browOuterUpLeft");
         float browOuterUpRight = GetBlendshapeValue(blendshapes, "browOuterUpRight");
+
+        float jawOpen = GetBlendshapeValue(blendshapes, "jawOpen");
+
+        float eyeWideLeft = GetBlendshapeValue(blendshapes, "eyeWideLeft");
+        float eyeWideRight = GetBlendshapeValue(blendshapes, "eyeWideRight");
+
         float noseSneerLeft = GetBlendshapeValue(blendshapes, "noseSneerLeft");
         float noseSneerRight = GetBlendshapeValue(blendshapes, "noseSneerRight");
 
-        // Averages
-        float smile = (smileLeft + smileRight) / 2.0f;
-        float mouthFrown = (mouthFrownLeft + mouthFrownRight) / 2.0f;
-        float eyeSquint = (eyeSquintLeft + eyeSquintRight) / 2.0f;
-        float eyeWide = (eyeWideLeft + eyeWideRight) / 2.0f;
-        float browDown = (browDownLeft + browDownRight) / 2.0f;
-        float browOuterUp = (browOuterUpLeft + browOuterUpRight) / 2.0f;
-        float noseSneer = (noseSneerLeft + noseSneerRight) / 2.0f;
 
-        // Emotion Recognition
-        if (smile > 0.45f && browDown < 0.45f && (jawOpen < 0.5f))
+        // Average 
+
+        float smile = (mouthSmileLeft + mouthSmileRight) * 0.5f;
+
+        float frown = (mouthFrownLeft + mouthFrownRight) * 0.5f;
+
+        float cheekSquint = (cheekSquintLeft + cheekSquintRight) * 0.5f;
+
+        float browDown = (browDownLeft + browDownRight) * 0.5f;
+
+        float browOuterUp = (browOuterUpLeft + browOuterUpRight) * 0.5f;
+
+        float mouthPress = (mouthPressLeft + mouthPressRight) * 0.5f;
+
+        float eyeWide = (eyeWideLeft + eyeWideRight) * 0.5f;
+
+        float noseSneer = (noseSneerLeft + noseSneerRight) * 0.5f;
+
+
+        // HAPPY
+        float happyScore =
+              0.45f * smile
+            + 0.40f * cheekSquint;
+
+
+        // SURPRISED
+        float surpriseScore =
+              0.25f * browInnerUp
+            + 0.20f * browOuterUp
+            + 0.30f * eyeWide
+            + 0.45f * jawOpen;
+
+
+        // ANGRY
+        float angryScore =
+              0.60f * browDown
+            + 0.25f * mouthPress
+            + 0.30f * mouthShrugLower
+            + 0.20f * noseSneer
+            + 0.15f * frown;
+
+
+        // Neutral
+        float expressiveActivity =
+              0.25f * browDown
+            + 0.25f * happyScore
+            + 0.25f * surpriseScore
+            + 0.20f * angryScore
+            + 0.20f * frown
+            + 0.05f * mouthPress;
+
+
+        // ------------------------------------------------------------
+        // Select strongest expression
+        // ------------------------------------------------------------
+
+        float neutralScore = 0.4f - expressiveActivity;
+        float unknownScore = 1.9f * expressiveActivity;
+
+        // Find maximum score.
+
+        float maxScore = neutralScore;
+        Emotion detectedEmotion = Emotion.NEUTRAL;
+
+        if (happyScore > maxScore)
         {
-            return Emotion.HAPPY;
+            maxScore = happyScore;
+            detectedEmotion = Emotion.HAPPY;
         }
-        else if (browDown > 0.45f && (noseSneer > 0.2f || eyeSquint > 0.25f) && smile < 0.2f)
+
+        if (surpriseScore > maxScore)
         {
-            return Emotion.ANGRY;
+            maxScore = surpriseScore;
+            detectedEmotion = Emotion.SURPRISED;
         }
-        else if (((eyeWide > 0.2f || browOuterUp > 0.2f || browInnerUp > 0.2f) && (jawOpen > 0.2f)) || (jawOpen > 0.4f))
+
+        if (angryScore > maxScore)
         {
-            return Emotion.SURPRISED;
+            maxScore = angryScore;
+            detectedEmotion = Emotion.ANGRY;
         }
-        else if (smile < 0.25f && browDown < 0.3f && browInnerUp < 0.3f && eyeWide < 0.25f && mouthFrown < 0.2f)
+
+        if(unknownScore > maxScore)
         {
-            return Emotion.NEUTRAL;
+            maxScore = unknownScore;
+            detectedEmotion = Emotion.UNKNOWN;
         }
-        else
-        {
-            return Emotion.UNKNOWN;
-        }
+
+        return detectedEmotion;
     }
 }

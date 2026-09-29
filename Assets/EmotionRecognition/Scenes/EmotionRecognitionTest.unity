@@ -493,6 +493,10 @@ PrefabInstance:
       propertyPath: useMachineLearning
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1291084079684775063, guid: 341cd91528042ee4ebe98866a37cd14e, type: 3}
+      propertyPath: useHardcodedThresholds
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1897949244634432878, guid: 341cd91528042ee4ebe98866a37cd14e, type: 3}
       propertyPath: m_LocalScale.x
       value: 5
