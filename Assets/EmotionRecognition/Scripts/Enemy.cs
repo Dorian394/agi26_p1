@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 public class Enemy : MonoBehaviour
 {
@@ -25,21 +26,9 @@ public class Enemy : MonoBehaviour
             _ => Color.lightGray,
         };
         childMeshRenderer.material.SetColor("_BaseColor", color);
-    }
-
-    
-    void Update()
-    {
-        if (target == null) return;
-
-        Vector3 targetPosition = new(target.transform.position.x, transform.position.y, target.transform.position.z);
-
-        transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
-
-        Vector3 direction = targetPosition - transform.position;
-        if (direction != Vector3.zero)
-        {
-            transform.rotation = Quaternion.LookRotation(direction);
-        }
+        
+        NavMeshAgent agent = GetComponent<NavMeshAgent>();
+        agent.speed = speed;
+        agent.destination = this.target.transform.position; 
     }
 }
