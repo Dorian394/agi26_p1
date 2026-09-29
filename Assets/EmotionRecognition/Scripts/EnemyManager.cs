@@ -86,7 +86,7 @@ public class EnemiesManager : MonoBehaviour
         Emotion randomEmotion;
         do
         {
-            randomEmotion = (Emotion)Random.Range(1, System.Enum.GetValues(typeof(Emotion)).Length);
+            randomEmotion = (Emotion)Random.Range(1, 4);
         } while (randomEmotion == lastEmotion);
         lastEmotion = randomEmotion;
 

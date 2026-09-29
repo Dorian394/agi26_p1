@@ -30,8 +30,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 85, y: 85, z: 85}
-  m_ConstrainProportionsScale: 1
+  m_LocalScale: {x: 100, y: 50, z: 85}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -108,7 +108,7 @@ MonoBehaviour:
   happyColor: {r: 1, g: 0.9333334, b: 0.5490196, a: 1}
   surprisedColor: {r: 0.8666667, g: 0.627451, b: 0.8666667, a: 1}
   angryColor: {r: 0.8039216, g: 0.3607843, b: 0.3607843, a: 1}
-  sadColor: {r: 0.8627452, g: 0.1921569, b: 0.1960784, a: 1}
+  unknownColor: {r: 0.5490196, g: 0.7882354, b: 0.1411765, a: 1}
   defaultColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!114 &1291084079684775063
 MonoBehaviour:
@@ -127,4 +127,7 @@ MonoBehaviour:
   fps: 60
   modelAsset: {fileID: 4900000, guid: 5838e83559205ed6b9bdd94fa57e9a18, type: 3}
   visualizer: {fileID: 6917543313817503281}
-  trainModel: 0
+  camera_id: 0
+  uiBars: {fileID: 0}
+  useHardcodedThresholds: 1
+  useMachineLearning: 1
