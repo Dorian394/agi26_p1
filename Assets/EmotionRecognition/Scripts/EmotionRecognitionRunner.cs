@@ -8,7 +8,11 @@ using Mediapipe.Unity.Experimental;
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Globalization;
+using Mediapipe;
+using Mediapipe.Tasks.Vision.HolisticLandmarker;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 public enum Emotion
 {
@@ -20,93 +24,20 @@ public enum Emotion
 
 public class EmotionRecognitionRunner : MonoBehaviour
 {
-    [SerializeField] private int width = 1080;
-    [SerializeField] private int height = 720;
-    [SerializeField] private int fps = 30;
-    [SerializeField] TextAsset modelAsset;
     [SerializeField] EmotionVisualizer visualizer;
-    [SerializeField] private int camera_id;
 
     WebCamTexture webCamTexture;
     FaceLandmarker faceLandmarker;
     TextureFrame textureFrame;
     Emotion currentEmotion;
 
-    IEnumerator Start()
-    {
-        // Init
-        yield return CreateWebCamTexture();
-        textureFrame = new TextureFrame(webCamTexture.width, webCamTexture.height, TextureFormat.RGBA32);
-
-        CreateFaceLandmarkerTask();
-
-        var waitForEndOfFrame = new WaitForEndOfFrame();
-
-        var stopwatch = new Stopwatch();
-        stopwatch.Start();
-
-        
-        // Loop
-        while (true)
-        {
-            ProcessFrame(stopwatch);
-
-            yield return waitForEndOfFrame;
-        }
-    }
-
-
-    IEnumerator CreateWebCamTexture()
-    {
-        if (WebCamTexture.devices.Length == 0)
-        {
-            throw new System.Exception("No Web Camera devices found.");
-        }
-        if (WebCamTexture.devices.Length < camera_id+1)
-        {
-            throw new System.Exception("Specified Web Camera device not found. Check Camera ID and connection.");
-        }
-        var webCamDevice = WebCamTexture.devices[camera_id];
-        //for (int i = 0; i < WebCamTexture.devices.Length; i++)   // If having trouble with selecting camera, you can use this loop along with the device name to manually select
-        //{
-        //    print(WebCamTexture.devices[i].name);
-        //    if (WebCamTexture.devices[i].name == "Logi C270 HD WebCam") {
-        //        webCamDevice = WebCamTexture.devices[i];
-        //    }
-        //}
-        webCamTexture = new WebCamTexture(webCamDevice.name, width, height, fps);
-        webCamTexture.Play();
-
-        // NOTE: On macOS, the contents of webCamTexture may not be readable immediately, so wait until it is readable
-        yield return new WaitUntil(() => webCamTexture.width > 16);
-    }
-
-    void CreateFaceLandmarkerTask()
-    {
-        var options = new FaceLandmarkerOptions(
-            baseOptions: new Mediapipe.Tasks.Core.BaseOptions(
-                Mediapipe.Tasks.Core.BaseOptions.Delegate.CPU,
-                modelAssetBuffer: modelAsset.bytes
-            ),
-            runningMode: Mediapipe.Tasks.Vision.Core.RunningMode.LIVE_STREAM,
-            outputFaceBlendshapes: true,
-            resultCallback: OnFaceLandmarkerResult
-        );
-
-        faceLandmarker = FaceLandmarker.CreateFromOptions(options);
-    }
-
-    void ProcessFrame(Stopwatch stopwatch)
-    {
-        textureFrame.ReadTextureOnCPU(webCamTexture, flipHorizontally: true, flipVertically: true);
-        using var image = textureFrame.BuildCPUImage();
-        faceLandmarker.DetectAsync(image, stopwatch.ElapsedMilliseconds);
-    }
-
     // Emotion classification
-    private void OnFaceLandmarkerResult(FaceLandmarkerResult result, Mediapipe.Image image, long timestamp)
+    public void OnFaceLandmarkerResult(FaceLandmarkerResult result, Image image, long timestampMillisec)
     {
-        if (result.faceLandmarks != null && result.faceBlendshapes.Count > 0)
+        if (result.faceLandmarks != null && result.faceLandmarks.Count > 0 &&
+            result.faceLandmarks[0].landmarks != null && result.faceLandmarks[0].landmarks.Count > 0 &&
+            result.faceBlendshapes != null && result.faceBlendshapes.Count > 0 &&
+            result.faceBlendshapes[0].categories != null && result.faceBlendshapes[0].categories.Count > 0)
         {
             var blendshapes = result.faceBlendshapes[0].categories;
 
@@ -119,12 +50,17 @@ public class EmotionRecognitionRunner : MonoBehaviour
             float browInnerUp = GetBlendshapeValue(blendshapes, "browInnerUp");
             float browOuterUpLeft = GetBlendshapeValue(blendshapes, "browOuterUpLeft");
             float browOuterUpRight = GetBlendshapeValue(blendshapes, "browOuterUpRight");
+            
+            float mouthFrownLeft = GetBlendshapeValue(blendshapes, "mouthFrownLeft");
+            float mouthFrownRight = GetBlendshapeValue(blendshapes, "mouthFrownRight");
 
             // Average
             float browDown = (browDownLeft + browDownRight) / 2.0f;
             float smile = (smileLeft + smileRight) / 2.0f;
             float browUp = (browInnerUp + browOuterUpLeft + browOuterUpRight) / 3.0f;
-
+            float mouthFrown =  (mouthFrownLeft + mouthFrownRight) / 2.0f;
+            
+            
             // Recognize emotion
             if (smile > 0.6f)
             {
@@ -134,7 +70,7 @@ public class EmotionRecognitionRunner : MonoBehaviour
             {
                 currentEmotion = Emotion.SURPRISED;
             }
-            else if (browDown > 0.5f)
+            else if (browDown > 0.5f || mouthFrown > 0.5f)
             {
                 currentEmotion = Emotion.ANGRY;
             }
@@ -143,7 +79,11 @@ public class EmotionRecognitionRunner : MonoBehaviour
                 currentEmotion = Emotion.NEUTRAL;
             }
 
-            visualizer.UpdateVisualizer(result.faceLandmarks[0].landmarks, currentEmotion);
+            float aspect = (image != null && image.Height() > 0)
+                ? (float)image.Width() / image.Height()
+                : -1f;
+
+            visualizer.UpdateVisualizer(result.faceLandmarks[0].landmarks, currentEmotion, aspect);
             EmotionBridge.SetEmotion(currentEmotion);
         }
     }
@@ -156,16 +96,5 @@ public class EmotionRecognitionRunner : MonoBehaviour
         }
         return 0f;
     }
-
-
-    private void OnDestroy()
-    {
-        if (webCamTexture != null)
-        {
-            webCamTexture.Stop();
-        }
-        textureFrame?.Release();
-        faceLandmarker?.Close();
-    }
-
+    
 }
