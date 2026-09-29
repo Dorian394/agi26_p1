@@ -298,7 +298,7 @@ namespace Micrograd
         //Log(x) - natural base
         public Value Log()
         {
-            float x = this.data;
+            float x = Mathf.Max(this.data, 1e-7f);
 
             float log = MicroMath.Log(x);
 

@@ -12,7 +12,7 @@ public class EmotionVisualizer : MonoBehaviour
     [SerializeField] private Color happyColor = Color.lightYellow;
     [SerializeField] private Color surprisedColor = Color.lavender;
     [SerializeField] private Color angryColor = Color.softRed;
-    [SerializeField] private Color sadColor = Color.softBlue;
+    [SerializeField] private Color unknownColor = Color.softGreen;
     [SerializeField] private Color defaultColor = Color.lightGray;
 
     // Object-related fields
@@ -114,7 +114,7 @@ public class EmotionVisualizer : MonoBehaviour
             Emotion.HAPPY => happyColor,
             Emotion.ANGRY => angryColor,
             Emotion.SURPRISED => surprisedColor,
-            Emotion.SAD => sadColor,
+            Emotion.UNKNOWN => unknownColor,
             _ => defaultColor,
         };
         faceMaterial.SetColor("_BaseColor", color);

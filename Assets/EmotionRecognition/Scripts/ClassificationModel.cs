@@ -4,16 +4,21 @@ using Mediapipe.Tasks.Vision.FaceLandmarker;
 using Mediapipe.Unity.Experimental;
 using Micrograd;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Unity.Collections;
-using UnityEditor;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class ClassificationModel
 {
+    // Constant parameters
+    const int nbBlendshapes = 52;
+    const int nbEmotions = 4;
+    const string folderPath = "Data";
+    const int width = 256, height = 256;
+    const int maxImgPerEmotion = 3000;
+
     // Micrograd
     private List<Value[]> inputData;
     private List<Value[]> outputData;
@@ -21,11 +26,14 @@ public class ClassificationModel
     [SerializeField] private bool trainModel;
 
     // Mediapipe
-    const int nbBlendshapes = 52;
-    const int nbEmotions = 5;
     private TextAsset modelAsset;
-    string folderPath = "Data";
     FaceLandmarker faceLandmarker;
+
+
+    // Reusable objects
+    private TextureFrame textureFrame = null;
+    private Texture2D sourceTexture;   
+    private Texture2D resizedTexture; 
 
     public ClassificationModel(bool trainModel, TextAsset modelAsset)
     {
@@ -36,137 +44,211 @@ public class ClassificationModel
 
         if (trainModel)
         {
-            GetLandmarkLists();
-            Train();
-            SaveModel();
+            // Init the reusable objects
+            textureFrame = new TextureFrame(width, height, TextureFormat.RGBA32);
+            sourceTexture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            resizedTexture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+
+            try
+            {
+                GetLandmarkLists();
+            }
+            finally
+            {
+                // Always release temporary resources, even if extraction throws
+                ReleaseExtractionResources();
+            }
+
+            if (Train())
+            {
+                SaveModel();
+            }
         }
 
         LoadModel();
     }
 
-    void Update()
+    private void ReleaseExtractionResources()
     {
-
+        if (faceLandmarker != null)
+        {
+            faceLandmarker.Close();
+            faceLandmarker = null;
+        }
+        if (sourceTexture != null)
+        {
+            UnityEngine.Object.Destroy(sourceTexture);
+            sourceTexture = null;
+        }
+        if (resizedTexture != null)
+        {
+            UnityEngine.Object.Destroy(resizedTexture);
+            resizedTexture = null;
+        }
     }
 
     private void GetLandmarkLists()
     {
-        // Create the list
+        // Init output/input list
         inputData = new List<Value[]>();
         outputData = new List<Value[]>();
 
-        // Create the mediapipe task
+        // Init Mediapipe Task
         CreateFaceLandmarkerTask();
 
-        // Get the path to the database
+        // Find the folder with the dataset
         string trainPath = Path.Combine(Application.streamingAssetsPath, folderPath);
-
         trainPath = Path.Combine(trainPath, "train");
 
-        if (Directory.Exists(trainPath))
+        if (!Directory.Exists(trainPath))
         {
-            for (int emotion = 0; emotion < nbEmotions; emotion++)
+            Debug.LogError($"The folder does not exist: {trainPath}");
+            return;
+        }
+
+        // Update list of inputs/outputs for each emotion
+        for (int emotion = 0; emotion < nbEmotions; emotion++)
+        {
+            // Check if the folder exists
+            string fullPath = Path.Combine(trainPath, GetEmotionFromIndex(emotion));
+            if (!Directory.Exists(fullPath))
             {
+                Debug.LogError($"The folder does not exist: {fullPath}");
+                continue;
+            }
 
-                string fullPath = Path.Combine(trainPath, GetEmotionFromIndex(emotion));
-                if (Directory.Exists(fullPath))
+            // Get all files within the folder
+            var filePaths = Directory.EnumerateFiles(fullPath)
+                .Where(f => !f.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            int length = Math.Min(filePaths.Length, maxImgPerEmotion);
+
+            // Read all files in parallel
+            byte[][] fileBytes = new byte[length][];
+            Parallel.For(0, length, i =>
+            {
+                try
                 {
+                    fileBytes[i] = File.ReadAllBytes(filePaths[i]);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Error reading file {filePaths[i]}: {e.Message}");
+                    fileBytes[i] = null;
+                }
+            });
 
-                    foreach (string filePath in Directory.EnumerateFiles(fullPath))
+            // Pass the images in the Mediapipe pipeline to extract Blendshapes
+            int kept = 0;
+            for (int i = 0; i < fileBytes.Length; i++)
+            {
+                Image image = LoadImageFromBytes(fileBytes[i]);
+                if (image == null)
+                {
+                    Debug.LogError($"Error while loading the image {filePaths[i]} for emotion {emotion}");
+                    continue;
+                }
+
+                try
+                {
+                    var result = faceLandmarker.Detect(image);
+
+                    if (result.faceBlendshapes != null && result.faceBlendshapes.Count > 0)
                     {
-                        // Skip the .meta files
-                        if (filePath.EndsWith(".meta", System.StringComparison.OrdinalIgnoreCase))
+                        var blendshapes = result.faceBlendshapes[0].categories;
+                        if (blendshapes != null && blendshapes.Count >= nbBlendshapes)
                         {
-                            continue;
-                        }
+                            inputData.Add(ConvertBlendshapesToValue(blendshapes));
 
-                        // Create an image to pass to the faceLandmarker
-                        Image image = LoadImageFromFile(filePath);
-                        if (image == null)
-                        {
-                            UnityEngine.Debug.LogError($"Error while importing the file: {filePath}");
-                            return;
-                        }
-
-                        // Get the results
-                        var result = faceLandmarker.Detect(image);
-
-                        // Save the results
-                        if (result.faceBlendshapes.Count > 0)
-                        {
-                            var blendshapes = result.faceBlendshapes[0].categories;
-                            if (blendshapes.Count >= nbBlendshapes)
+                            float[] output = new float[nbEmotions];
+                            for(int k = 0; k < nbEmotions; k++)
                             {
-                                // Save input
-                                inputData.Add(ConvertBlendshapesToValue(blendshapes));
-
-                                // Save output
-                                float[] output = new float[nbEmotions];
-                                output[emotion] = 1.0f;
-                                outputData.Add(Value.Convert(output));
+                                output[k] = 0.1f / (nbEmotions - 1);
                             }
+                            output[emotion] = 0.9f;
+                            outputData.Add(Value.Convert(output));
+                            kept++;
                         }
                     }
                 }
-                else
+                catch (Exception e)
                 {
-                    Debug.LogError($"The folder does not exist: {fullPath}");
+                    Debug.LogError($"Detect() failed for {filePaths[i]}: {e.Message}");
                 }
+                finally
+                {
+                    image.Dispose();
+                }
+
+                fileBytes[i] = null; // let the GC reclaim the raw bytes early
             }
-        }
-        else
-        {
-            Debug.LogError($"The folder does not exist: {trainPath}");
+            // Print debug
+            Debug.Log($"{GetEmotionFromIndex(emotion)}: {kept}/{filePaths.Length} images with a detected face");
         }
     }
 
-
+    // Get the index corresponding to each emotion
     private string GetEmotionFromIndex(int index)
     {
         switch (index)
         {
             case 0: return "neutral";
             case 1: return "happy";
-            case 2: return "sad";
-            case 3: return "angry";
-            case 4: return "surprised";
+            case 2: return "angry";
+            case 3: return "surprised";
             default: return "unknown";
         }
     }
 
+    // Convert the Blendshapes coefficients (list of float) to Micrograd Values
     private Value[] ConvertBlendshapesToValue(List<Category> blendshapes)
     {
         float[] blendshape_values = new float[nbBlendshapes];
-        for (int i = 0; i < nbBlendshapes; i++)
+
+        var sortedBlendshapes = blendshapes.OrderBy(b => b.index).ToList();
+
+        for (int i = 0; i < nbBlendshapes && i < sortedBlendshapes.Count; i++)
         {
-            blendshape_values[i] = blendshapes[i].score;
+            blendshape_values[i] = sortedBlendshapes[i].score;
         }
         return Value.Convert(blendshape_values);
     }
 
-    public Image LoadImageFromFile(string filePath)
+    // Read a list of bytes file and returns a corresponding Image that can be used by Mediapipe
+    private Image LoadImageFromBytes(byte[] fileData)
     {
-        // Create a Texture2D
-        if (!File.Exists(filePath)) return null;
+        if (fileData == null || fileData.Length == 0)
+        {
+            return null;
+        }
 
-        byte[] fileData = File.ReadAllBytes(filePath);
+        if (!ImageConversion.LoadImage(sourceTexture, fileData))
+        {
+            return null;
+        }
 
-        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-        if (!ImageConversion.LoadImage(texture, fileData)) return null;
+        RenderTexture rt = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32);
+        RenderTexture previous = RenderTexture.active;
+        try
+        {
+            Graphics.Blit(sourceTexture, rt);
+            RenderTexture.active = rt;
+            resizedTexture.ReadPixels(new UnityEngine.Rect(0, 0, width, height), 0, 0);
+            resizedTexture.Apply();
+        }
+        finally
+        {
+            RenderTexture.active = previous;
+            RenderTexture.ReleaseTemporary(rt);
+        }
 
-        // Create a TextureFrame
-        int width = texture.width;
-        int height = texture.height;
+        textureFrame.ReadTextureOnCPU(resizedTexture, flipHorizontally: true, flipVertically: true);
 
-        TextureFrame textureFrame = new TextureFrame(width, height, TextureFormat.RGBA32);
-        textureFrame.ReadTextureOnCPU(texture, flipHorizontally: true, flipVertically: true);
-
-        // Create an Image
-        Image image = textureFrame.BuildCPUImage();
-        textureFrame?.Release();
-        return image;
+        return textureFrame.BuildCPUImage();
     }
 
+    // Initialize the Mediapipe Face Landmark task
     void CreateFaceLandmarkerTask()
     {
         var options = new FaceLandmarkerOptions(
@@ -181,28 +263,40 @@ public class ClassificationModel
         faceLandmarker = FaceLandmarker.CreateFromOptions(options);
     }
 
-    // Micrograd
-    void Train()
+
+    // Train the model
+    bool Train()
     {
+        if (inputData == null || inputData.Count == 0)
+        {
+            Debug.LogError("No training samples (no face detected in any image). Training aborted.");
+            return false;
+        }
+
         MicroMath.Random.Seed(0);
 
         InitNetworkArchitecture();
 
-        // Optimizer that will do gradient descent for us
-        Adam optimizer = nn.Adam_Optimizer(nn.GetParameters(), learningRate: 0.01f);
+        Adam optimizer = nn.Adam_Optimizer(nn.GetParameters(), learningRate: 0.0001f);
 
-        // Create input data list
-        int halfSize = inputData.Count / 2;
         Value[][] input = inputData.ToArray();
         Value[][] output = outputData.ToArray();
 
-        // Train
-        int epochs = 10;
+        Debug.Log($"Input size: {input.Length}");
+
+        int epochs = 50;
+        int[] indices = Enumerable.Range(0, input.Length).ToArray();
 
         for (int epoch = 0; epoch < epochs; epoch++)
         {
             float totalEpochLoss = 0f;
-            var indices = Enumerable.Range(0, input.Length).OrderBy(x => UnityEngine.Random.value).ToArray();
+
+            // Fisher-Yates shuffle (O(n))
+            for (int s = indices.Length - 1; s > 0; s--)
+            {
+                int r = UnityEngine.Random.Range(0, s + 1);
+                (indices[s], indices[r]) = (indices[r], indices[s]);
+            }
 
             for (int i = 0; i < indices.Length; i++)
             {
@@ -227,34 +321,27 @@ public class ClassificationModel
             }
 
             Debug.Log($"Epoch {epoch}: loss = {totalEpochLoss / input.Length}");
-            System.GC.Collect();
         }
+
+        return true;
     }
 
-    public int getEmotion(List<Category> blendshapes)
+    // Public interface: returns the list of probabilities
+    public float[] getEmotions(List<Category> blendshapes)
     {
         Value[] input = ConvertBlendshapesToValue(blendshapes);
         Value[] result = nn.Activate(input);
-        return IdxMax(result);
-    }
-
-    int IdxMax(Value[] values)
-    {
-        int maxIndex = 0;
-        float maxValue = values[0].data;
-
-        for (int i = 1; i < values.Length; i++)
+        float[] output = new float[result.Length];
+        for (int i = 0; i < result.Length; i++)
         {
-            if (values[i].data > maxValue)
-            {
-                maxValue = values[i].data;
-                maxIndex = i;
-            }
+            output[i] = result[i].data;
         }
-        return maxIndex;
+
+        return output;
     }
 
-    public void SaveModel(string fileName = "emotion_model.json")
+    // Save the trained model to a JSON file
+    void SaveModel(string fileName = "emotion_model.json")
     {
         if (nn == null)
         {
@@ -273,16 +360,16 @@ public class ClassificationModel
 
         string json = JsonUtility.ToJson(data, true);
 
-        string filePath = Path.Combine(Application.persistentDataPath, fileName);
+        string filePath = Path.Combine(Application.streamingAssetsPath, fileName);
         File.WriteAllText(filePath, json);
 
-        Debug.Log($"The model was successful saved.");
+        Debug.Log("The model was successfully saved.");
     }
 
-
-    public void LoadModel(string fileName = "emotion_model.json")
+    // Load the model from a JSON file
+    void LoadModel(string fileName = "emotion_model.json")
     {
-        string filePath = Path.Combine(Application.persistentDataPath, fileName);
+        string filePath = Path.Combine(Application.streamingAssetsPath, fileName);
 
         if (!File.Exists(filePath))
         {
@@ -292,7 +379,6 @@ public class ClassificationModel
 
         string json = File.ReadAllText(filePath);
         ModelData data = JsonUtility.FromJson<ModelData>(json);
-
 
         if (nn == null || nn.GetParameters().Length == 0)
         {
@@ -315,13 +401,16 @@ public class ClassificationModel
         Debug.Log($"The model was successfully loaded. ({parameters.Length} parameters).");
     }
 
+    // Initialize the Neural Network Architecture
     private void InitNetworkArchitecture()
     {
         nn = new MLP();
         nn.AddLayers(
-            nn.Linear(nbBlendshapes, 16),
-            nn.ReLU(),
-            nn.Linear(16, nbEmotions),
+            nn.Linear(nbBlendshapes, 2 * nbBlendshapes),
+            nn.Tanh(),
+            nn.Linear(2 * nbBlendshapes, nbBlendshapes / 2),
+            nn.Tanh(),
+            nn.Linear(nbBlendshapes / 2, nbEmotions),
             nn.Softmax()
         );
     }
