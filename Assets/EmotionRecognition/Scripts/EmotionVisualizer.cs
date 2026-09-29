@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Mediapipe.Tasks.Components.Containers;
 using UnityEngine;
 
@@ -14,6 +15,12 @@ public class EmotionVisualizer : MonoBehaviour
     [SerializeField] private Color angryColor = Color.softRed;
     [SerializeField] private Color unknownColor = Color.softGreen;
     [SerializeField] private Color defaultColor = Color.lightGray;
+    
+    [Header("Attack")]
+    [SerializeField] private EnemyManager enemyManager;
+    [SerializeField] private AudioSource chargeSfx;
+    [SerializeField] private AudioSource shootSfx;
+
 
     // Object-related fields
     Material faceMaterial; // Mesh renderer
@@ -25,9 +32,13 @@ public class EmotionVisualizer : MonoBehaviour
     private List<NormalizedLandmark> currentLandmarks;
     private bool hasNewData = false; // Flag set to true when new landmarks are available
     private readonly object lockObj = new(); // Lock to synchronize the accesses to the shared array landmarkListTemp
-    Emotion currentEmotion; // Current emotion
-
-
+    
+    private readonly Queue<(float time, Emotion emotion)> emotions = new();
+    private Emotion lastEmotion = Emotion.UNKNOWN;
+    private float chargeTime;
+    private bool shooted;
+    private Vector3 baseScale;
+    private float maxChargeScale = 1.5f;
     
     
 
@@ -57,6 +68,9 @@ public class EmotionVisualizer : MonoBehaviour
 
         // Get the mesh renderer for future updates
         faceMaterial= GetComponent<MeshRenderer>().material;
+        
+        baseScale = transform.localScale;
+
     }
 
     public void UpdateVisualizer(List<NormalizedLandmark> receivedLandmarkList, Emotion emotion)
@@ -71,8 +85,7 @@ public class EmotionVisualizer : MonoBehaviour
             landmarkListTemp.AddRange(receivedLandmarkList);
 
 
-            this.currentEmotion = emotion;
-            this.hasNewData = true;
+            hasNewData = true;
         }
     }
 
@@ -108,15 +121,67 @@ public class EmotionVisualizer : MonoBehaviour
         faceMesh.RecalculateNormals();
         faceMesh.RecalculateBounds();
 
+        Emotion emotion = EmotionBridge.GetEmotion();
+
+        // Add sample
+        emotions.Enqueue((Time.time, emotion));
+
+        // Remove samples older than 0.2s
+        while (emotions.Count > 0 && Time.time - emotions.Peek().time > 0.2f)
+            emotions.Dequeue();
+
+        // Rolling majority
+        var counts = new Dictionary<Emotion, int>();
+
+        foreach (var sample in emotions)
+            counts[sample.emotion] = counts.GetValueOrDefault(sample.emotion) + 1;
+
+        Emotion smoothEmotion = counts
+            .OrderByDescending(x => x.Value)
+            .First().Key;
+
         // Update texture
-        var color = currentEmotion switch
+        var color = smoothEmotion switch
         {
             Emotion.HAPPY => happyColor,
             Emotion.ANGRY => angryColor,
             Emotion.SURPRISED => surprisedColor,
-            Emotion.UNKNOWN => unknownColor,
             _ => defaultColor,
         };
+
         faceMaterial.SetColor("_BaseColor", color);
+
+        // Charge
+        if (smoothEmotion != lastEmotion)
+        {
+            lastEmotion = smoothEmotion;
+            chargeTime = 0f;
+            shooted = false;
+            chargeSfx.Stop();
+            transform.localScale = baseScale;
+        }
+        else if (smoothEmotion != Emotion.NEUTRAL && smoothEmotion != Emotion.UNKNOWN)
+        {
+            chargeTime += Time.deltaTime;
+            
+            float charge = Mathf.Clamp01(chargeTime / 1f);
+            transform.localScale = baseScale * Mathf.Lerp(1f, maxChargeScale, charge);
+
+
+            if (!shooted && chargeTime >= 0.3f && !chargeSfx.isPlaying)
+            {
+                chargeSfx.Play();
+            }
+            if (!shooted && chargeTime >= 1f)
+            {
+                chargeSfx.Stop();
+                if (enemyManager.Shoot(smoothEmotion))
+                {
+                    shooted = true;
+                    shootSfx.Play();
+                }
+            }
+        }
     }
+
 }

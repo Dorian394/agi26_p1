@@ -1,9 +1,15 @@
 using System;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class Enemy : MonoBehaviour
 {
+    [SerializeField] private GameObject  happyPrefab;
+    [SerializeField] private GameObject  angryPrefab;
+    [SerializeField] private GameObject  surprisedPrefab;
+    
+    
     // Fields
 
     HealthManager target;
@@ -11,7 +17,9 @@ public class Enemy : MonoBehaviour
     float speed;
     MeshRenderer childMeshRenderer;
     GameObject deathEffect;
-    private bool isDead = false;
+    private bool isDead;
+    
+    
 
     public void Initialize(HealthManager target, float speed, Emotion emotion, GameObject deathEffect)
     {
@@ -23,15 +31,14 @@ public class Enemy : MonoBehaviour
 
 
         // Update texture
-        childMeshRenderer = GetComponentInChildren<MeshRenderer>();
-        var color = emotion switch
+        
+        Instantiate(emotion switch
         {
-            Emotion.HAPPY => Color.lightYellow,
-            Emotion.ANGRY => Color.softRed,
-            Emotion.SURPRISED => Color.pink,
-            _ => Color.lightGray,
-        };
-        childMeshRenderer.material.SetColor("_BaseColor", color);
+            Emotion.HAPPY => happyPrefab,
+            Emotion.ANGRY => angryPrefab,
+            Emotion.SURPRISED => surprisedPrefab,
+            _ => null,
+        }, transform);
         
         NavMeshAgent agent = GetComponent<NavMeshAgent>();
         agent.speed = speed;
@@ -58,7 +65,6 @@ public class Enemy : MonoBehaviour
             isDead = true;
             SpawnDeathEffect();
             Destroy(gameObject);
-            
         }
     }
 
