@@ -116,3 +116,5 @@ InitTestScene*.unity*
 
 # Downloaded files
 /Packages/Downloaded
+
+.idea
