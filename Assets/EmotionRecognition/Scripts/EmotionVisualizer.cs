@@ -35,6 +35,9 @@ public class EmotionVisualizer : MonoBehaviour
     
     private readonly Queue<(float time, Emotion emotion)> emotions = new();
     private Emotion lastEmotion = Emotion.UNKNOWN;
+
+    // Gameplay
+    [SerializeField] float maxChargeTime = 0.3f;
     private float chargeTime;
     private bool shooted;
     private Vector3 baseScale;
@@ -164,15 +167,15 @@ public class EmotionVisualizer : MonoBehaviour
         {
             chargeTime += Time.deltaTime;
             
-            float charge = Mathf.Clamp01(chargeTime / 1f);
+            float charge = Mathf.Clamp01(chargeTime / maxChargeTime);
             transform.localScale = baseScale * Mathf.Lerp(1f, maxChargeScale, charge);
 
 
-            if (!shooted && chargeTime >= 0.3f && !chargeSfx.isPlaying)
+            if (!shooted && chargeTime >= maxChargeTime/4f && !chargeSfx.isPlaying)
             {
                 chargeSfx.Play();
             }
-            if (!shooted && chargeTime >= 1f)
+            if (!shooted && chargeTime >= maxChargeTime)
             {
                 chargeSfx.Stop();
                 if (enemyManager.Shoot(smoothEmotion))

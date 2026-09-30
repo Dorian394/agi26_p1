@@ -304,7 +304,7 @@ public class EmotionRecognitionRunner : MonoBehaviour
 
         // ANGRY
         float angryScore =
-              0.60f * browDown
+              0.30f * browDown
             + 0.25f * mouthPress
             + 0.30f * mouthShrugLower
             + 0.20f * noseSneer

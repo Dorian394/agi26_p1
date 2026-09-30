@@ -152,7 +152,7 @@ public class EnemyManager : MonoBehaviour
         lastEmotion = randomEmotion;
 
         // Spawning the enemy
-        Enemy newEnemyObj = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
+        Enemy newEnemyObj = Instantiate(enemyPrefab, spawnPosition, Quaternion.Euler(0f, 90f, 0f));
         if (newEnemyObj.TryGetComponent<Enemy>(out var enemyScript))
         {
             enemyScript.Initialize(target, speed, randomEmotion, deathEffectPrefab);

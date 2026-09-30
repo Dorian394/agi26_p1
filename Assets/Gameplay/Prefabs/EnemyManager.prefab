@@ -44,9 +44,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 676049454783a6d45971d8f9f7a49f74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemiesManager
-  enemyPrefab: {fileID: 7598065807812667509, guid: 19b25ff3455255f45b20c6f20e9f52b6, type: 3}
+  enemyPrefab: {fileID: 7194871824427657965, guid: 19b25ff3455255f45b20c6f20e9f52b6, type: 3}
   deathEffectPrefab: {fileID: 2762440166408022683, guid: e80198a760691e64eacea7bdaa8714f6, type: 3}
   target: {fileID: 0}
+  shooter: {fileID: 0}
   defaultSpawnInterval: 2
   spawnSizeX: 10
   spawnSizeZ: 10
