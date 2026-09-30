@@ -52,7 +52,7 @@ public class Enemy : MonoBehaviour
             float distance = Vector3.Distance(this.transform.position, target.transform.position);
             if(distance < target.damageRadius)
             {
-                target.InflictDamage(10f);
+                target.InflictDamage(11f);
                 this.Kill();
             }
         }
