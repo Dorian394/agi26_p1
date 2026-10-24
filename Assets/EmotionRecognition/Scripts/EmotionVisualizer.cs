@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Mediapipe.Tasks.Components.Containers;
 using UnityEngine;
 
@@ -51,6 +52,12 @@ public class EmotionVisualizer : MonoBehaviour
     [SerializeField] private Color angryColor = Color.softRed;
     [SerializeField] private Color unknownColor = Color.softGreen;
     [SerializeField] private Color defaultColor = Color.lightGray;
+    
+    [Header("Attack")]
+    [SerializeField] private EnemyManager enemyManager;
+    [SerializeField] private AudioSource chargeSfx;
+    [SerializeField] private AudioSource shootSfx;
+
 
     // Object-related fields
     private MeshRenderer meshRenderer;
@@ -72,9 +79,19 @@ public class EmotionVisualizer : MonoBehaviour
     // Cached camera parameters
     private float cachedFovY = 60f;
     private float cachedAspect = 16f / 9f;
-
+    
+    private readonly Queue<(float time, Emotion emotion)> emotions = new();
+    private Emotion lastEmotion = Emotion.UNKNOWN;
+    
     public bool IsCalibrated => isCalibrated;
     public float EstimatedDepth => smoothedDepth;
+    
+    // Gameplay
+    [SerializeField] float maxChargeTime = 0.3f;
+    private float chargeTime;
+    private bool shooted;
+    private Vector3 baseScale;
+    private float maxChargeScale = 1.5f;
 
     [ContextMenu("Recalibrate Face Size")]
     public void Recalibrate()
@@ -112,13 +129,16 @@ public class EmotionVisualizer : MonoBehaviour
         GetComponent<MeshFilter>().mesh = faceMesh;
 
         meshRenderer = GetComponent<MeshRenderer>();
-    }
+        
+        baseScale = transform.localScale;
 
+    }
+    
     private void Update()
     {
         UpdateCameraCache();
 
-        Emotion emotion;
+        Emotion smoothEmotion;
         float aspect;
 
         lock (lockObj)
@@ -128,13 +148,64 @@ public class EmotionVisualizer : MonoBehaviour
 
             currentLandmarks.Clear();
             currentLandmarks.AddRange(pendingLandmarks);
-            emotion = pendingEmotion;
+            
+            Emotion emotion = pendingEmotion;
+
+            // Add sample
+            emotions.Enqueue((Time.time, emotion));
+
+            // Remove samples older than 0.2s
+            while (emotions.Count > 0 && Time.time - emotions.Peek().time > 0.2f)
+                emotions.Dequeue();
+
+            // Rolling majority
+            var counts = new Dictionary<Emotion, int>();
+
+            foreach (var sample in emotions)
+                counts[sample.emotion] = counts.GetValueOrDefault(sample.emotion) + 1;
+
+            smoothEmotion = counts
+                .OrderByDescending(x => x.Value)
+                .First().Key;
             aspect = pendingAspect > 0f ? pendingAspect : cachedAspect;
+            
             hasNewData = false;
         }
 
         UpdateFace(currentLandmarks, aspect);
-        UpdateColor(emotion);
+        UpdateColor(smoothEmotion);
+        
+        // Charge
+        if (smoothEmotion != lastEmotion)
+        {
+            lastEmotion = smoothEmotion;
+            chargeTime = 0f;
+            shooted = false;
+            chargeSfx.Stop();
+            transform.localScale = baseScale;
+        }
+        else if (smoothEmotion != Emotion.NEUTRAL && smoothEmotion != Emotion.UNKNOWN)
+        {
+            chargeTime += Time.deltaTime;
+            
+            float charge = Mathf.Clamp01(chargeTime / maxChargeTime);
+            transform.localScale = baseScale * Mathf.Lerp(1f, maxChargeScale, charge);
+
+
+            if (!shooted && chargeTime >= maxChargeTime/4f && !chargeSfx.isPlaying)
+            {
+                chargeSfx.Play();
+            }
+            if (!shooted && chargeTime >= maxChargeTime)
+            {
+                chargeSfx.Stop();
+                if (enemyManager.Shoot(smoothEmotion))
+                {
+                    shooted = true;
+                    shootSfx.Play();
+                }
+            }
+        }
     }
 
     private void UpdateCameraCache()
@@ -291,6 +362,8 @@ public class EmotionVisualizer : MonoBehaviour
             Emotion.UNKNOWN => unknownColor,
             _ => defaultColor,
         };
+
         meshRenderer.material.SetColor("_BaseColor", color);
     }
+
 }
