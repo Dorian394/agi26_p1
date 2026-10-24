@@ -149,24 +149,7 @@ public class EmotionVisualizer : MonoBehaviour
             currentLandmarks.Clear();
             currentLandmarks.AddRange(pendingLandmarks);
             
-            Emotion emotion = pendingEmotion;
-
-            // Add sample
-            emotions.Enqueue((Time.time, emotion));
-
-            // Remove samples older than 0.2s
-            while (emotions.Count > 0 && Time.time - emotions.Peek().time > 0.2f)
-                emotions.Dequeue();
-
-            // Rolling majority
-            var counts = new Dictionary<Emotion, int>();
-
-            foreach (var sample in emotions)
-                counts[sample.emotion] = counts.GetValueOrDefault(sample.emotion) + 1;
-
-            smoothEmotion = counts
-                .OrderByDescending(x => x.Value)
-                .First().Key;
+            smoothEmotion = SmoothEmotion();
             aspect = pendingAspect > 0f ? pendingAspect : cachedAspect;
             
             hasNewData = false;
@@ -175,6 +158,35 @@ public class EmotionVisualizer : MonoBehaviour
         UpdateFace(currentLandmarks, aspect);
         UpdateColor(smoothEmotion);
         
+        HandleEmotionCharge(smoothEmotion);
+    }
+
+    private Emotion SmoothEmotion()
+    {
+        Emotion smoothEmotion;
+        Emotion emotion = pendingEmotion;
+
+        // Add sample
+        emotions.Enqueue((Time.time, emotion));
+
+        // Remove samples older than 0.2s
+        while (emotions.Count > 0 && Time.time - emotions.Peek().time > 0.2f)
+            emotions.Dequeue();
+
+        // Rolling majority
+        var counts = new Dictionary<Emotion, int>();
+
+        foreach (var sample in emotions)
+            counts[sample.emotion] = counts.GetValueOrDefault(sample.emotion) + 1;
+
+        smoothEmotion = counts
+            .OrderByDescending(x => x.Value)
+            .First().Key;
+        return smoothEmotion;
+    }
+
+    private void HandleEmotionCharge(Emotion smoothEmotion)
+    {
         // Charge
         if (smoothEmotion != lastEmotion)
         {
