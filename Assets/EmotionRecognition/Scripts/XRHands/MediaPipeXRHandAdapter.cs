@@ -150,17 +150,7 @@ namespace MediaPipeXRHands
         private float rightLastSeenTime = -1f;
 
         // Handedness disambiguation state
-        private Vector2 lastLeftWrist2D = new Vector2(0.3f, 0.5f);
-        private Vector2 lastRightWrist2D = new Vector2(0.7f, 0.5f);
-        private int singleHandFlipStreak = 0;
-
-        private struct RawDetection
-        {
-            public string category;
-            public float score;
-            public Vector2 wristNorm;
-            public int index;
-        }
+        private readonly HandednessDisambiguator handednessDisambiguator = new HandednessDisambiguator();
 
         // Cached camera parameters
         private float cachedFovY = 60f;
@@ -303,16 +293,13 @@ namespace MediaPipeXRHands
             rightWasTracked = false;
             leftLastSeenTime = -1f;
             rightLastSeenTime = -1f;
-            lastLeftWrist2D = new Vector2(0.3f, 0.5f);
-            lastRightWrist2D = new Vector2(0.7f, 0.5f);
-            singleHandFlipStreak = 0;
+            handednessDisambiguator.Reset();
             Debug.Log("[MediaPipeXRHandAdapter] Hand calibration reset.");
         }
 
         /// <summary>
         /// Asynchronous MediaPipe callback (runs on a background thread).
         /// Copies landmark data under lock with handedness disambiguation.
-        /// Guaranteed to never assign both slots to the same hand or overwrite.
         /// </summary>
         public void UpdateResult(
             HandLandmarkerResult result, Image image, long timestampMillisec)
@@ -322,138 +309,18 @@ namespace MediaPipeXRHands
                 pendingLeftSeen = false;
                 pendingRightSeen = false;
 
-                // 1. Gather all valid hand detections (up to 2)
-                RawDetection det0 = default;
-                RawDetection det1 = default;
-                int validCount = 0;
+                var (leftIndex, rightIndex) = handednessDisambiguator.Disambiguate(result);
 
-                if (result.handedness != null && result.handWorldLandmarks != null && result.handLandmarks != null)
+                if (leftIndex >= 0)
                 {
-                    for (var i = 0; i < result.handedness.Count && validCount < 2; i++)
-                    {
-                        if (i >= result.handWorldLandmarks.Count || i >= result.handLandmarks.Count)
-                            break;
-
-                        if (result.handedness[i].categories == null || result.handedness[i].categories.Count == 0)
-                            continue;
-
-                        var normList = result.handLandmarks[i].landmarks;
-                        var worldList = result.handWorldLandmarks[i].landmarks;
-                        if (normList == null || normList.Count < 21 || worldList == null || worldList.Count < 21)
-                            continue;
-
-                        var det = new RawDetection
-                        {
-                            category = result.handedness[i].categories[0].categoryName,
-                            score = result.handedness[i].categories[0].score,
-                            wristNorm = new Vector2(normList[0].x, normList[0].y),
-                            index = i
-                        };
-
-                        if (validCount == 0) det0 = det;
-                        else det1 = det;
-                        validCount++;
-                    }
-                }
-
-                // 2. Disambiguate and assign detections to Left and Right
-                if (validCount == 1)
-                {
-                    int predictedHand = (det0.category == "Left") ? 0 : 1;
-                    int assignedHand = predictedHand;
-
-                    // If only one hand was previously tracked and this detection is right at its position:
-                    // Guard against a single-frame misclassification jump across the screen
-                    if (leftWasTracked && !rightWasTracked)
-                    {
-                        float dLeft = Vector2.Distance(det0.wristNorm, lastLeftWrist2D);
-                        if (predictedHand == 1 && dLeft < 0.3f && singleHandFlipStreak < 2)
-                        {
-                            singleHandFlipStreak++;
-                            assignedHand = 0; // Closest wins: keep as Left
-                        }
-                        else
-                        {
-                            singleHandFlipStreak = (predictedHand == 1) ? singleHandFlipStreak + 1 : 0;
-                            assignedHand = predictedHand;
-                        }
-                    }
-                    else if (rightWasTracked && !leftWasTracked)
-                    {
-                        float dRight = Vector2.Distance(det0.wristNorm, lastRightWrist2D);
-                        if (predictedHand == 0 && dRight < 0.3f && singleHandFlipStreak < 2)
-                        {
-                            singleHandFlipStreak++;
-                            assignedHand = 1; // Closest wins: keep as Right
-                        }
-                        else
-                        {
-                            singleHandFlipStreak = (predictedHand == 0) ? singleHandFlipStreak + 1 : 0;
-                            assignedHand = predictedHand;
-                        }
-                    }
-                    else
-                    {
-                        singleHandFlipStreak = 0;
-                        assignedHand = predictedHand;
-                    }
-
-                    if (assignedHand == 0)
-                    {
-                        pendingLeftSeen = true;
-                        CopyLandmarks(result, det0.index, pendingLeftNorm, pendingLeftWorld);
-                    }
-                    else
-                    {
-                        pendingRightSeen = true;
-                        CopyLandmarks(result, det0.index, pendingRightNorm, pendingRightWorld);
-                    }
-                }
-                else if (validCount == 2)
-                {
-                    singleHandFlipStreak = 0;
-                    bool det0IsLeft;
-
-                    if (det0.category != det1.category)
-                    {
-                        // Clear distinct prediction from MediaPipe (one Left, one Right)
-                        det0IsLeft = (det0.category == "Left");
-                    }
-                    else
-                    {
-                        // Conflict: Both detections were labeled with the SAME handedness!
-                        // "the closest wins" - compare total distance to last tracked positions
-                        if (leftWasTracked || rightWasTracked)
-                        {
-                            float costA = Vector2.Distance(det0.wristNorm, lastLeftWrist2D) +
-                                          Vector2.Distance(det1.wristNorm, lastRightWrist2D);
-
-                            float costB = Vector2.Distance(det0.wristNorm, lastRightWrist2D) +
-                                          Vector2.Distance(det1.wristNorm, lastLeftWrist2D);
-
-                            det0IsLeft = (costA <= costB);
-                        }
-                        else
-                        {
-                            // First frame: in mirror mode, hand on screen-left (smaller X) is Left hand
-                            det0IsLeft = (det0.wristNorm.x <= det1.wristNorm.x);
-                        }
-                    }
-
                     pendingLeftSeen = true;
-                    pendingRightSeen = true;
+                    CopyLandmarks(result, leftIndex, pendingLeftNorm, pendingLeftWorld);
+                }
 
-                    // Guarantee: Never write to the same hand twice in a frame
-                    if (det0IsLeft)
-                    {
-                        CopyLandmarks(result, det0.index, pendingLeftNorm, pendingLeftWorld);
-                        CopyLandmarks(result, det1.index, pendingRightNorm, pendingRightWorld);
-                    }
-                    else
-                    {
-                        CopyLandmarks(result, det1.index, pendingLeftNorm, pendingLeftWorld);
-                        CopyLandmarks(result, det0.index, pendingRightNorm, pendingRightWorld);
-                    }
+                if (rightIndex >= 0)
+                {
+                    pendingRightSeen = true;
+                    CopyLandmarks(result, rightIndex, pendingRightNorm, pendingRightWorld);
                 }
 
                 if (image != null && image.Height() > 0)
@@ -505,14 +372,6 @@ namespace MediaPipeXRHands
             {
                 lastSeenTime = now;
 
-                if (handedness == Handedness.Left)
-                {
-                    lastLeftWrist2D = new Vector2(normLms[0].x, normLms[0].y);
-                }
-                else
-                {
-                    lastRightWrist2D = new Vector2(normLms[0].x, normLms[0].y);
-                }
 
                 // 1. Hand size & depth estimation (in-plane orthogonal axes, immune to noisy z foreshortening)
                 float currentHandSize = CalculateHandScreenSize(normLms, imageAspect);

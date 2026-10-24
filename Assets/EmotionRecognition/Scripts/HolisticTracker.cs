@@ -1,16 +1,13 @@
-using System.Collections.Generic;
+using System.Collections;
 using System.Diagnostics;
-using Mediapipe;
-using UnityEngine;
-using UnityEngine.UI;
-
 using Mediapipe.Tasks.Core;
 using Mediapipe.Tasks.Vision.FaceLandmarker;
+using Mediapipe.Tasks.Vision.GestureRecognizer;
 using Mediapipe.Tasks.Vision.HandLandmarker;
-using Mediapipe.Tasks.Vision.HolisticLandmarker;
-using Mediapipe.Unity;
 using Mediapipe.Unity.Experimental;
 using MediaPipeXRHands;
+using UnityEngine;
+using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
 using RunningMode = Mediapipe.Tasks.Vision.Core.RunningMode;
 
@@ -20,37 +17,56 @@ public class CameraSelectionAttribute : PropertyAttribute
 
 public class HolisticTracker : MonoBehaviour
 {
-    [Header("Visualizers")]
-    [SerializeField] private EmotionRecognitionRunner emotions;
+    [Header("Visualizers")] [SerializeField]
+    private EmotionRecognitionRunner emotions;
+
     [SerializeField] private MediaPipeXRHandAdapter xrHandAdapter;
-    
-    [Header("UI")]
-    [SerializeField] private RawImage screen;
-    
-    [Header("Model")]
-    [SerializeField] private TextAsset handLandmarkerModel;
+
+    [Header("UI")] [SerializeField] private RawImage screen;
+
+    [Header("Model")] [SerializeField] private TextAsset handLandmarkerModel;
+
+    [SerializeField] private TextAsset handGesturesModel;
     [SerializeField] private TextAsset faceLandmarkerModel;
-    
-    [Header("Camera")]
-    [SerializeField] private int width = 1080;
+
+    [Header("Camera")] [SerializeField] private int width = 1080;
+
     [SerializeField] private int height = 720;
     [SerializeField] private int fps = 30;
     [SerializeField] [CameraSelection] private int cameraId;
+    private FaceLandmarker faceLandmarker;
+    private GestureRecognizer handGestureRecognizer;
+    private HandLandmarker handLandmarker;
+    private Stopwatch stopwatch;
+
+    private TextureFrame textureFrame;
 
 
     private WebCamTexture webcam;
-    private HandLandmarker handLandmarker;
-    private FaceLandmarker faceLandmarker;
-
-    private TextureFrame textureFrame;
-    private Stopwatch stopwatch;
 
     private void Start()
     {
         StartCoroutine(Run());
     }
 
-    private System.Collections.IEnumerator Run()
+
+    private void OnDestroy()
+    {
+        if (webcam != null) webcam.Stop();
+
+        textureFrame?.Dispose();
+
+        handLandmarker?.Close();
+        handLandmarker = null;
+
+        handGestureRecognizer.Close();
+        handGestureRecognizer = null;
+
+        faceLandmarker?.Close();
+        faceLandmarker = null;
+    }
+
+    private IEnumerator Run()
     {
         // --------------------------------------------------
         // 1. Start webcam
@@ -75,33 +91,39 @@ public class HolisticTracker : MonoBehaviour
         // 2. Create HolisticLandmarker
         // --------------------------------------------------
 
-        
+
         var handLandmarkerOptions = new HandLandmarkerOptions(
             new BaseOptions(
                 modelAssetBuffer: handLandmarkerModel.bytes
             ),
-            runningMode: RunningMode.LIVE_STREAM,
-            
-            
-            numHands:2,
-            
+            RunningMode.LIVE_STREAM,
+            2,
             resultCallback: xrHandAdapter.UpdateResult
+        );
+
+        var handGestureRecognizerOptions = new GestureRecognizerOptions(
+            new BaseOptions(
+                modelAssetBuffer: handGesturesModel.bytes
+            ),
+            RunningMode.LIVE_STREAM,
+            2,
+            resultCallback: emotions.OnHandGestureResult
         );
 
         var faceLandmarkerOptions = new FaceLandmarkerOptions(
             new BaseOptions(
                 modelAssetBuffer: faceLandmarkerModel.bytes
             ),
-            runningMode: RunningMode.LIVE_STREAM,
-            
-            numFaces:1,
-            
+            RunningMode.LIVE_STREAM,
             outputFaceBlendshapes: true,
             resultCallback: emotions.OnFaceLandmarkerResult
         );
-        
+
         handLandmarker =
             HandLandmarker.CreateFromOptions(handLandmarkerOptions);
+
+        handGestureRecognizer =
+            GestureRecognizer.CreateFromOptions(handGestureRecognizerOptions);
 
         faceLandmarker =
             FaceLandmarker.CreateFromOptions(faceLandmarkerOptions);
@@ -117,10 +139,10 @@ public class HolisticTracker : MonoBehaviour
             webcam.height,
             TextureFormat.RGBA32
         );
-        
+
         stopwatch = new Stopwatch();
-        stopwatch.Start(); 
-        
+        stopwatch.Start();
+
         var waitForEndOfFrame =
             new WaitForEndOfFrame();
 
@@ -133,30 +155,13 @@ public class HolisticTracker : MonoBehaviour
             // from MediaPipe's, so flip vertically.
             textureFrame.ReadTextureOnCPU(
                 webcam,
-                flipHorizontally: true,
-                flipVertically: true
+                true,
+                true
             );
 
             var timestamp = stopwatch.ElapsedMilliseconds;
             faceLandmarker.DetectAsync(textureFrame.BuildCPUImage(), timestamp);
             handLandmarker.DetectAsync(textureFrame.BuildCPUImage(), timestamp);
         }
-    }
-    
-
-    private void OnDestroy()
-    {
-        if (webcam != null)
-        {
-            webcam.Stop();
-        }
-
-        textureFrame?.Dispose();
-
-        handLandmarker?.Close();
-        handLandmarker = null;
-        
-        faceLandmarker?.Close();
-        faceLandmarker = null;
     }
 }

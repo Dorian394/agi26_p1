@@ -7,6 +7,7 @@ using Mediapipe.Tasks.Components.Containers;
 using Mediapipe.Tasks.Vision.FaceLandmarker;
 using Mediapipe.Unity.Experimental;
 using System;
+using System.Collections.Generic;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,9 +17,14 @@ using System.Linq;
 using Unity.Collections;
 using System.Globalization;
 using Mediapipe;
-using Mediapipe.Tasks.Vision.HolisticLandmarker;
+using Mediapipe.Tasks.Components.Containers;
+using Mediapipe.Tasks.Vision.GestureRecognizer;
+using Mediapipe.Tasks.Components.Containers;
+using Mediapipe.Tasks.Vision.FaceLandmarker;
+using Mediapipe.Tasks.Vision.GestureRecognizer;
+using Mediapipe.Unity.Experimental;
+using MediaPipeXRHands;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 
 public enum Emotion
 {
@@ -37,13 +43,12 @@ public class EmotionRecognitionRunner : MonoBehaviour
     [SerializeField] private bool useHardcodedThresholds;
     [SerializeField] private bool useMachineLearning;
     bool trainModel = false;
-
-    WebCamTexture webCamTexture;
+    private readonly HandednessDisambiguator handDisambiguator = new HandednessDisambiguator();
+    
     FaceLandmarker faceLandmarker;
     TextureFrame textureFrame;
     Emotion currentEmotion;
     ClassificationModel classificationModel;
-
     private void Start()
     {
         // Init
@@ -78,22 +83,8 @@ public class EmotionRecognitionRunner : MonoBehaviour
         }
     }
 
-    private float GetBlendshapeValue(System.Collections.Generic.List<Mediapipe.Tasks.Components.Containers.Category> categories, string name)
-    {
-        foreach (var category in categories)
-        {
-            if (category.categoryName == name) return category.score;
-        }
-        return 0f;
-    }
-
-
     private void OnDestroy()
     {
-        if (webCamTexture != null)
-        {
-            webCamTexture.Stop();
-        }
         textureFrame?.Release();
         faceLandmarker?.Close();
     }
@@ -277,7 +268,7 @@ public class EmotionRecognitionRunner : MonoBehaviour
             maxScore = happyScore;
             detectedEmotion = Emotion.HAPPY;
         }
-
+        
         if (surpriseScore > maxScore)
         {
             maxScore = surpriseScore;
@@ -297,5 +288,22 @@ public class EmotionRecognitionRunner : MonoBehaviour
         }
 
         return detectedEmotion;
+    }
+    
+    private float GetBlendshapeValue(List<Category> categories, string name)
+    {
+        foreach (var category in categories)
+        {
+            if (category.categoryName == name) return category.score;
+        }
+        return 0f;
+    }
+    
+    public void OnHandGestureResult(GestureRecognizerResult gestureRecognizerResult, Image image,
+        long timestampMillisec)
+    {
+        var (leftIndex, rightIndex) = handDisambiguator.Disambiguate(gestureRecognizerResult);
+        Debug.Log("Left hand:" + gestureRecognizerResult.gestures[leftIndex].categories);
+        Debug.Log("Right hand" + gestureRecognizerResult.gestures[rightIndex].categories);
     }
 }
