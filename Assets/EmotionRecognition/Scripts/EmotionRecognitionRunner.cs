@@ -23,6 +23,14 @@ public enum Emotion
     
 }
 
+public enum Gesture
+{
+    THUMB_UP = 0,
+    OPEN_PALM,
+    CLOSED_FIST,
+    VICTORY
+}
+
 public class EmotionRecognitionRunner : MonoBehaviour
 {
     [SerializeField] TextAsset modelAsset;
@@ -293,5 +301,18 @@ public class EmotionRecognitionRunner : MonoBehaviour
         var (leftIndex, rightIndex) = handDisambiguator.Disambiguate(gestureRecognizerResult);
         Debug.Log("Left hand:" + gestureRecognizerResult.gestures[leftIndex].categories);
         Debug.Log("Right hand" + gestureRecognizerResult.gestures[rightIndex].categories);
+        EmotionBridge.SetLeftHand(GetGesture(gestureRecognizerResult.gestures[leftIndex].categories[0]));
+        EmotionBridge.SetRightHand(GetGesture(gestureRecognizerResult.gestures[rightIndex].categories[0]));
+    }
+
+    private Gesture GetGesture(Category category)
+    {
+        return category.categoryName switch
+        {
+            "Thumb_Up" => Gesture.THUMB_UP,
+            "Open_Palm" => Gesture.OPEN_PALM,
+            "Closed_Fist" => Gesture.CLOSED_FIST,
+            "Victory" => Gesture.VICTORY
+        };
     }
 }

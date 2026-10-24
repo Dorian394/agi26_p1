@@ -68,9 +68,7 @@ public class HolisticTracker : MonoBehaviour
 
     private IEnumerator Run()
     {
-        // --------------------------------------------------
         // 1. Start webcam
-        // --------------------------------------------------
 
         webcam = new WebCamTexture(width, height, fps);
         webcam.Play();
@@ -87,10 +85,7 @@ public class HolisticTracker : MonoBehaviour
             $"Webcam started: {webcam.width} x {webcam.height}"
         );
 
-        // --------------------------------------------------
-        // 2. Create HolisticLandmarker
-        // --------------------------------------------------
-
+        // 2. Create mediapipe models runners
 
         var handLandmarkerOptions = new HandLandmarkerOptions(
             new BaseOptions(
@@ -100,13 +95,22 @@ public class HolisticTracker : MonoBehaviour
             2,
             resultCallback: xrHandAdapter.UpdateResult
         );
+        
+        var gestureClassifierOptions = new ClassifierOptions();
+        gestureClassifierOptions.categoryAllowlist.Add("Thumb_Up");
+        gestureClassifierOptions.categoryAllowlist.Add("Open_Palm");
+        gestureClassifierOptions.categoryAllowlist.Add("Closed_Fist");
+        gestureClassifierOptions.categoryAllowlist.Add("Victory");
+        gestureClassifierOptions.maxResults = 1;
+        gestureClassifierOptions.scoreThreshold = 0.5f;
 
         var handGestureRecognizerOptions = new GestureRecognizerOptions(
             new BaseOptions(
                 modelAssetBuffer: handGesturesModel.bytes
             ),
             RunningMode.LIVE_STREAM,
-            2,
+            numHands: 2,
+            cannedGestureClassifierOptions: gestureClassifierOptions,
             resultCallback: emotions.OnHandGestureResult
         );
 
@@ -130,9 +134,7 @@ public class HolisticTracker : MonoBehaviour
 
         Debug.Log("HolisticLandmarker created.");
 
-        // --------------------------------------------------
         // 3. Prepare texture frame
-        // --------------------------------------------------
 
         textureFrame = new TextureFrame(
             webcam.width,
@@ -146,7 +148,8 @@ public class HolisticTracker : MonoBehaviour
         var waitForEndOfFrame =
             new WaitForEndOfFrame();
 
-
+        // 4. Run models
+        
         while (true)
         {
             yield return waitForEndOfFrame;
