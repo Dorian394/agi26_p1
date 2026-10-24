@@ -160,7 +160,7 @@ Material:
     - _FarColor: {r: 0, g: 0.29803923, b: 0.06847243, a: 1}
     - _NearColor: {r: 0.20792942, g: 0.2603773, b: 0.15082231, a: 1}
     - _NearFarView: {r: 3, g: 20, b: 0, a: 0}
-    - _ShadowColor: {r: 0, g: 0, b: 0, a: 1}
+    - _ShadowColor: {r: 0.8037735, g: 0.8037735, b: 0.8037735, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _WindNoiseContrast: {r: 0.17, g: 1.2, b: 0, a: 0}
     - _WindNoiseScale: {r: 100, g: 200, b: 0, a: 0}
