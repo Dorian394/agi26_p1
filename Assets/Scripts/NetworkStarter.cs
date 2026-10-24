@@ -1,5 +1,8 @@
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using Unity.Multiplayer.PlayMode;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
@@ -24,38 +27,64 @@ public class NetworkStarter : MonoBehaviour
 
     private void Start()
     {
-        var networkManager = NetworkManager.Singleton;
-        var transport = networkManager.GetComponent<UnityTransport>();
-        transport.UseWebSockets = true;
-
-        // Fetch the role selected in the Multiplayer Play Mode tools or Build Profile
-        var isServer = NetworkManager.Singleton.IsServer;
-
-        // WebGL requires WebSockets. We enforce this for both Host and Client.
-        transport.UseWebSockets = true;
+        #if UNITY_EDITOR
+        
+        var tags = CurrentPlayer.Tags;
+        if (!tags.Contains("Server") && !tags.Contains("Client")) return;
+        
+        // Retrieve the role selected in the Multiplayer Play Mode tools
+        var isServer = tags.Contains("Server");
 
         if (!isServer)
         {
-            Debug.Log($"[Client] Connecting to {hostUrl}:{webClientPort}");
-
-            // Pass the domain and port. WebGL will naturally resolve the domain 
-            // and upgrade to WSS (Secure WebSockets) on port 443.
-            transport.SetConnectionData(hostUrl, webClientPort);
-
-            networkManager.StartClient();
+            StartClientConnection();
         }
         else
         {
-            Debug.Log($"[Host] Listening on local port {hostListenPort}");
-
-            // The host listens locally. Cloudflare forwards internet traffic here.
-            // "0.0.0.0" allows the server to listen on all available network interfaces.
-            transport.SetConnectionData("127.0.0.1", hostListenPort, "0.0.0.0");
-
-            networkManager.StartHost();
-
-            LaunchTunnel();
+            StartHostConnection();
         }
+        
+        #elif UNITY_STANDALONE_WIN
+        
+        StartHostConnection();
+        
+        #elif UNITY_WEBGL
+        
+        StartClientConnection();
+        
+        #endif
+    }
+
+    private void StartHostConnection()
+    {
+        var networkManager = NetworkManager.Singleton;
+        var transport = networkManager.GetComponent<UnityTransport>();
+        transport.UseWebSockets = true;
+            
+        Debug.Log($"[Host] Listening on local port {hostListenPort}");
+
+        // The host listens locally. Cloudflare forwards internet traffic here.
+        // "0.0.0.0" allows the server to listen on all available network interfaces.
+        transport.SetConnectionData("127.0.0.1", hostListenPort, "0.0.0.0");
+
+        networkManager.StartHost();
+
+        LaunchTunnel();
+    }
+
+    private void StartClientConnection()
+    {
+        var networkManager = NetworkManager.Singleton;
+        var transport = networkManager.GetComponent<UnityTransport>();
+        transport.UseWebSockets = true;
+            
+        Debug.Log($"[Client] Connecting to {hostUrl}:{webClientPort}");
+
+        // Pass the domain and port. WebGL will naturally resolve the domain 
+        // and upgrade to WSS (Secure WebSockets) on port 443.
+        transport.SetConnectionData(hostUrl, webClientPort);
+
+        networkManager.StartClient();
     }
 
     private void OnApplicationQuit()
@@ -74,17 +103,15 @@ public class NetworkStarter : MonoBehaviour
         try
         {
             tunnelProcess = new Process();
-            tunnelProcess.StartInfo.FileName = "cloudflared";
+            tunnelProcess.StartInfo.FileName = Path.Combine(Application.streamingAssetsPath, "cloudflared.exe");
 
-            // Constructs: tunnel --url http://localhost:7777 --hostname cinnamon-croissant.eu.cc
+            // Command: tunnel --url http://localhost:7777 --hostname cinnamon-croissant.eu.cc
             tunnelProcess.StartInfo.Arguments =
                 $"tunnel --no-autoupdate run --token {cloudflareToken}";
 
-            // Run invisibly in the background
+            // Run it in the background
             tunnelProcess.StartInfo.UseShellExecute = false;
             tunnelProcess.StartInfo.CreateNoWindow = true;
-
-            // Redirect output to Unity Console
             tunnelProcess.StartInfo.RedirectStandardOutput = true;
             tunnelProcess.StartInfo.RedirectStandardError = true;
 
