@@ -6,25 +6,12 @@
 using Mediapipe.Tasks.Components.Containers;
 using Mediapipe.Tasks.Vision.FaceLandmarker;
 using Mediapipe.Unity.Experimental;
-using System;
 using System.Collections.Generic;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
 using Mediapipe;
-using System.IO;
-using System.Linq;
-using Unity.Collections;
-using System.Globalization;
-using Mediapipe;
-using Mediapipe.Tasks.Components.Containers;
 using Mediapipe.Tasks.Vision.GestureRecognizer;
-using Mediapipe.Tasks.Components.Containers;
-using Mediapipe.Tasks.Vision.FaceLandmarker;
-using Mediapipe.Tasks.Vision.GestureRecognizer;
-using Mediapipe.Unity.Experimental;
 using MediaPipeXRHands;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 public enum Emotion
 {
@@ -38,6 +25,7 @@ public enum Emotion
 
 public class EmotionRecognitionRunner : MonoBehaviour
 {
+    [SerializeField] TextAsset modelAsset;
     [SerializeField] EmotionVisualizer visualizer;
     [SerializeField] private EmotionUIBars uiBars = null;
     [SerializeField] private bool useHardcodedThresholds;
