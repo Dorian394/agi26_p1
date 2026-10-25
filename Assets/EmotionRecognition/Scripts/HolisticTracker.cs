@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Mediapipe.Tasks.Core;
 using Mediapipe.Tasks.Vision.FaceLandmarker;
@@ -97,10 +98,13 @@ public class HolisticTracker : MonoBehaviour
         );
         
         var gestureClassifierOptions = new ClassifierOptions();
-        gestureClassifierOptions.categoryAllowlist.Add("Thumb_Up");
-        gestureClassifierOptions.categoryAllowlist.Add("Open_Palm");
-        gestureClassifierOptions.categoryAllowlist.Add("Closed_Fist");
-        gestureClassifierOptions.categoryAllowlist.Add("Victory");
+        gestureClassifierOptions.categoryAllowlist = new List<string>
+        {
+            "Thumb_Up",
+            "Open_Palm",
+            "Closed_Fist",
+            "Victory"
+        };
         gestureClassifierOptions.maxResults = 1;
         gestureClassifierOptions.scoreThreshold = 0.5f;
 
