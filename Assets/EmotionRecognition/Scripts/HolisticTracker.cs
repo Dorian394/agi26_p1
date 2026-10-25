@@ -22,9 +22,7 @@ public class HolisticTracker : MonoBehaviour
     private EmotionRecognitionRunner emotions;
 
     [SerializeField] private MediaPipeXRHandAdapter xrHandAdapter;
-
-    [Header("UI")] [SerializeField] private RawImage screen;
-
+    
     [Header("Model")] [SerializeField] private TextAsset handLandmarkerModel;
 
     [SerializeField] private TextAsset handGesturesModel;
@@ -78,10 +76,7 @@ public class HolisticTracker : MonoBehaviour
             webcam.width > 16 &&
             webcam.height > 16
         );
-
-        screen.texture = webcam;
-        screen.SetNativeSize();
-
+        
         Debug.Log(
             $"Webcam started: {webcam.width} x {webcam.height}"
         );

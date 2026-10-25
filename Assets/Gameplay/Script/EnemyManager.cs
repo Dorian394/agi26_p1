@@ -9,12 +9,11 @@ public class EnemyManager : MonoBehaviour
 {
     [Header("Spawn Settings")]
     [SerializeField] private Enemy enemyPrefab;
+    [SerializeField] private PathNode[] spawnNodes;
     [SerializeField] private GameObject deathEffectPrefab;
     [SerializeField] private HealthManager target;
     [SerializeField] private GameObject shooter;
     [SerializeField] private float defaultSpawnInterval = 10f;
-    [SerializeField] private float spawnSizeX = 10f;
-    [SerializeField] private float spawnSizeZ = 10f;
 
     [Header("Enemy Default Stats")]
     [SerializeField] private float defaultSpeed = 3f;
@@ -27,16 +26,14 @@ public class EnemyManager : MonoBehaviour
     private float speed;
     private float spawnInterval;
 
-    void Start()
+    private void Start()
     {
-        spawnInterval = defaultSpawnInterval;
-        speed = defaultSpeed;
+        ResetDifficulty();
         nextSpawnTime = Time.time + spawnInterval;
     }
 
-    void Update()
+    private void Update()
     {
-        // Spawn a new enemy if possible
         if (Time.time >= nextSpawnTime)
         {
             SpawnEnemy();
@@ -45,32 +42,13 @@ public class EnemyManager : MonoBehaviour
             speed += 0.7f;
         }
 
-        // Dequeue the potentially null elements at the head of the queue
-        if (activeEnemies.Count > 0)
-        {
-            var nearestEnemy = activeEnemies.Peek();
-            while (nearestEnemy == null)
-            {
-                activeEnemies.Dequeue();
-                if (activeEnemies.Count > 0) nearestEnemy = activeEnemies.Peek();
-            }
-        }
-        
-        // Reset
+        RemoveDestroyedEnemiesFromQueue();
+
         if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
-        {
-            while(activeEnemies.Count > 0)
-            {
-                Enemy enemy = activeEnemies.Dequeue();
-                enemy.Kill();
-            }
-            speed = defaultSpeed;
-            spawnInterval = defaultSpawnInterval;
-            target.Restart();
-            Debug.Log("RESET");
-        }
+            ResetManager();
     }
-    
+
+    /// <summary>Find and shoot the first active Enemy with the requested emotion.</summary>
     public bool Shoot(Emotion emotion)
     {
         int count = activeEnemies.Count;
@@ -96,19 +74,23 @@ public class EnemyManager : MonoBehaviour
     
     private IEnumerator KillEnemy(Enemy enemy)
     {
-        // Create a temporary ball
+        if (enemy == null || shooter == null)
+            yield break;
+
         GameObject ball = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         ball.transform.position = shooter.transform.position;
-        ball.transform.localScale = Vector3.one * 1f;
+        ball.transform.localScale = Vector3.one;
 
-        // Give it a colour
-        var renderer = ball.GetComponent<Renderer>();
-        renderer.material.color = enemy.emotion switch
+        Renderer ballRenderer = ball.GetComponent<Renderer>();
+        if (ballRenderer != null)
         {
-            Emotion.HAPPY => new Color(255, 238, 140),
-            Emotion.ANGRY => new Color(221, 160, 221),
-            Emotion.SURPRISED => new Color(205, 92, 92),
-            _ => Color.lightGray,
+            ballRenderer.material.color = enemy.emotion switch
+            {
+                Emotion.HAPPY => new Color(255, 238, 140),
+                Emotion.ANGRY => new Color(221, 160, 221),
+                Emotion.SURPRISED => new Color(205, 92, 92),
+                _ => Color.lightGray,
+            };
         };
 
         Vector3 start = shooter.transform.position;
@@ -116,18 +98,16 @@ public class EnemyManager : MonoBehaviour
         float duration = .3f;
         float elapsed = 0f;
 
-        while (elapsed < duration && enemy)
+        while (elapsed < duration && enemy != null)
         {
             elapsed += Time.deltaTime;
-
-            float t = elapsed / duration;
-            ball.transform.position = Vector3.Lerp(start, enemy.transform.position, t);
-
+            ball.transform.position = Vector3.Lerp(start, enemy.transform.position, elapsed / duration);
             yield return null;
         }
         
         // Kill only after the ball reaches the enemy
-        enemy.Kill();
+        if (enemy != null)
+            enemy.Kill();
 
         Destroy(ball);
     }
@@ -137,11 +117,10 @@ public class EnemyManager : MonoBehaviour
         if (enemyPrefab == null || target == null) return;
 
         // Spawn position
-        Vector3 spawnPosition = transform.TransformPoint(
-            (Random.value - 0.5f) * spawnSizeX,
-            0,
-            (Random.value - 0.5f) * spawnSizeZ
-        );
+        PathNode spawnNode = spawnNodes[Random.Range(0, spawnNodes.Length)];
+        if (spawnNode == null)
+            return;
+        
 
         // Emotion of the spawned enemy
         Emotion randomEmotion;
@@ -152,7 +131,7 @@ public class EnemyManager : MonoBehaviour
         lastEmotion = randomEmotion;
 
         // Spawning the enemy
-        Enemy newEnemyObj = Instantiate(enemyPrefab, spawnPosition, Quaternion.Euler(0f, 90f, 0f));
+        Enemy newEnemyObj = Instantiate(enemyPrefab, spawnNode.transform.position, Quaternion.identity);
         if (newEnemyObj.TryGetComponent<Enemy>(out var enemyScript))
         {
             enemyScript.Initialize(target, speed, randomEmotion, deathEffectPrefab);
@@ -161,19 +140,61 @@ public class EnemyManager : MonoBehaviour
         // Adding the enemy to the queue (for management)
         activeEnemies.Enqueue(newEnemyObj);
     }
-
     
+    private void RemoveDestroyedEnemiesFromQueue()
+    {
+        while (activeEnemies.Count > 0 && activeEnemies.Peek() == null)
+            activeEnemies.Dequeue();
+    }
 
-    // Debug: draw spawn area
+    private void ResetManager()
+    {
+        while (activeEnemies.Count > 0)
+        {
+            Enemy enemyObject = activeEnemies.Dequeue();
+            if (enemyObject == null)
+                continue;
+
+            if (enemyObject.TryGetComponent<Enemy>(out Enemy enemy))
+                enemy.Kill();
+            else
+            {
+                SpawnDeathEffect(enemyObject.transform.position);
+                Destroy(enemyObject);
+            }
+        }
+
+        ResetDifficulty();
+        nextSpawnTime = Time.time + spawnInterval;
+
+        if (target != null)
+            target.Restart();
+
+        Debug.Log("RESET");
+    }
+
+    private void ResetDifficulty()
+    {
+        speed = defaultSpeed;
+        spawnInterval = defaultSpawnInterval;
+    }
+
+    private void SpawnDeathEffect(Vector3 position)
+    {
+        if (deathEffectPrefab != null)
+            Instantiate(deathEffectPrefab, position, Quaternion.identity);
+    }
+
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.cyan;
-        
-        Gizmos.matrix = transform.localToWorldMatrix;
-        Vector3 size = new(spawnSizeX, 1f, spawnSizeZ);
-        Gizmos.DrawWireCube(Vector3.zero, size);
-        
-        Gizmos.matrix = Matrix4x4.identity;
+
+        const float circleRadius = 1f;
+        foreach (PathNode node in spawnNodes)
+        {
+            if (node != null)
+                Gizmos.DrawWireSphere(node.transform.position, circleRadius);
+        }
     }
 
     // Test if the Enemy prefab has the Script Enemy

@@ -301,14 +301,14 @@ public class EmotionRecognitionRunner : MonoBehaviour
         long timestampMillisec)
     {
         var (leftIndex, rightIndex) = handDisambiguator.Disambiguate(gestureRecognizerResult);
-        if (leftIndex != -1)
+        if (leftIndex >= 0)
         {
-            Debug.Log("Left hand:" + gestureRecognizerResult.gestures[leftIndex].categories[0]);
+            //Debug.Log("Left hand:" + gestureRecognizerResult.gestures[leftIndex].categories[0]);
             EmotionBridge.SetLeftHand(GetGesture(gestureRecognizerResult.gestures[leftIndex].categories[0]));
         }
 
-        if (rightIndex != -1){
-            Debug.Log("Right hand:" + gestureRecognizerResult.gestures[rightIndex].categories[0]);
+        if (rightIndex >= 0){
+            //Debug.Log("Right hand:" + gestureRecognizerResult.gestures[rightIndex].categories[0]);
             EmotionBridge.SetRightHand(GetGesture(gestureRecognizerResult.gestures[rightIndex].categories[0]));
         } 
     }
