@@ -28,7 +28,8 @@ public enum Gesture
     THUMB_UP = 0,
     OPEN_PALM,
     CLOSED_FIST,
-    VICTORY
+    VICTORY,
+    NONE
 }
 
 public class EmotionRecognitionRunner : MonoBehaviour
@@ -312,7 +313,8 @@ public class EmotionRecognitionRunner : MonoBehaviour
             "Thumb_Up" => Gesture.THUMB_UP,
             "Open_Palm" => Gesture.OPEN_PALM,
             "Closed_Fist" => Gesture.CLOSED_FIST,
-            "Victory" => Gesture.VICTORY
+            "Victory" => Gesture.VICTORY,
+            _ => Gesture.NONE
         };
     }
 }
