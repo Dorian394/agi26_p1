@@ -295,15 +295,21 @@ public class EmotionRecognitionRunner : MonoBehaviour
         }
         return 0f;
     }
-    
+
     public void OnHandGestureResult(GestureRecognizerResult gestureRecognizerResult, Image image,
         long timestampMillisec)
     {
         var (leftIndex, rightIndex) = handDisambiguator.Disambiguate(gestureRecognizerResult);
-        Debug.Log("Left hand:" + gestureRecognizerResult.gestures[leftIndex].categories);
-        Debug.Log("Right hand" + gestureRecognizerResult.gestures[rightIndex].categories);
-        EmotionBridge.SetLeftHand(GetGesture(gestureRecognizerResult.gestures[leftIndex].categories[0]));
-        EmotionBridge.SetRightHand(GetGesture(gestureRecognizerResult.gestures[rightIndex].categories[0]));
+        if (leftIndex != -1)
+        {
+            Debug.Log("Left hand:" + gestureRecognizerResult.gestures[leftIndex].categories[0]);
+            EmotionBridge.SetLeftHand(GetGesture(gestureRecognizerResult.gestures[leftIndex].categories[0]));
+        }
+
+        if (rightIndex != -1){
+            Debug.Log("Right hand:" + gestureRecognizerResult.gestures[rightIndex].categories[0]);
+            EmotionBridge.SetRightHand(GetGesture(gestureRecognizerResult.gestures[rightIndex].categories[0]));
+        } 
     }
 
     private Gesture GetGesture(Category category)

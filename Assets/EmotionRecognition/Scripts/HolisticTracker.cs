@@ -102,7 +102,6 @@ public class HolisticTracker : MonoBehaviour
         {
             "Thumb_Up",
             "Open_Palm",
-            "Closed_Fist",
             "Victory"
         };
         gestureClassifierOptions.maxResults = 1;
@@ -168,6 +167,7 @@ public class HolisticTracker : MonoBehaviour
 
             var timestamp = stopwatch.ElapsedMilliseconds;
             faceLandmarker.DetectAsync(textureFrame.BuildCPUImage(), timestamp);
+            handGestureRecognizer.RecognizeAsync(textureFrame.BuildCPUImage(), timestamp);
             handLandmarker.DetectAsync(textureFrame.BuildCPUImage(), timestamp);
         }
     }
