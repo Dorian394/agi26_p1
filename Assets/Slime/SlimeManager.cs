@@ -80,12 +80,12 @@ public class SlimeManager : MonoBehaviour
         Emotion randomEmotion;
         do
         {
-            randomEmotion = (Emotion)Random.Range(1, System.Enum.GetValues(typeof(Emotion)).Length);
+            randomEmotion = (Emotion)Random.Range(1, 5); // The 1-4 range is hardcoded here, bad form but it works for now
         } while (randomEmotion == lastEmotion);
         lastEmotion = randomEmotion;
 
         // Spawning the enemy
-        GameObject newEnemyObj = Instantiate(enemyPrefab[0], spawnNode.transform.position, Quaternion.identity);
+        GameObject newEnemyObj = Instantiate(enemyPrefab[(int)randomEmotion-1], spawnNode.transform.position, Quaternion.identity);
         if (newEnemyObj.TryGetComponent<Slime>(out var slimeScript))
         {
             slimeScript.Initialize(spawnNode, speed, randomEmotion);

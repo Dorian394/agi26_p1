@@ -172,7 +172,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33126a6d27984234886b35f30f81d6bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Slime
-  emotion: 0
+  target: {fileID: 0}
+  emotion: 4
 --- !u!195 &8541092849412281567
 NavMeshAgent:
   m_ObjectHideFlags: 0
