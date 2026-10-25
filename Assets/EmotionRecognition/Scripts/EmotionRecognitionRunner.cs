@@ -19,10 +19,11 @@ using Debug = UnityEngine.Debug;
 public enum Emotion
 {
     NEUTRAL = 0,
-    HAPPY,
-    ANGRY,
-    SURPRISED,
-    UNKNOWN,
+    HAPPY = 1,
+    ANGRY = 2,
+    SURPRISED = 3,
+    SAD = 4,
+    UNKNOWN = -1,
     
 }
 
