@@ -80,7 +80,7 @@ public class SlimeManager : MonoBehaviour
         Emotion randomEmotion;
         do
         {
-            randomEmotion = (Emotion)Random.Range(1, 5); // The 1-4 range is hardcoded here, bad form but it works for now
+            randomEmotion = (Emotion)Random.Range(1, 4); // The 1-3 range is hardcoded here, bad form but it works for now
         } while (randomEmotion == lastEmotion);
         lastEmotion = randomEmotion;
 

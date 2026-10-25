@@ -290,7 +290,6 @@ MonoBehaviour:
   - {fileID: 2785379729249473448, guid: 29eec1872c9f88a47b5760d2ec135b78, type: 3}
   - {fileID: 5169049319581381038, guid: d179fc0e635232c4684e701e36c80d37, type: 3}
   - {fileID: 5296632536598470195, guid: 3ca3a35efe7aa96448369de60215bc85, type: 3}
-  - {fileID: 2588631993827886792, guid: 4d3d48d7491df8a4795f8667bcbe2fe1, type: 3}
   deathEffectPrefab: {fileID: 0}
   defaultSpawnInterval: 2
   spawnNodes:
