@@ -37,7 +37,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _FogDistance: 189.5
+    - _FogDistance: 190
     m_Colors:
     - _FogColor: {r: 1, g: 0.69804084, b: 0.5254902, a: 1}
   m_BuildTextureStacks: []
