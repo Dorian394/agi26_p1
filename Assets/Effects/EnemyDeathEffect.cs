@@ -11,11 +11,29 @@ public class EnemyDeathEffect : MonoBehaviour
 
     AudioSource audioSource;
     [SerializeField] AudioClip[] audioClips;
+    
+    private Enemy targetEnemy;
+    public GameObject happyPsPrefab;
+    public GameObject angryPsPrefab;
+    public GameObject surprisedVfxPrefab;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         audioSource = GetComponent<AudioSource>();
         audioSource.PlayOneShot(audioClips[UnityEngine.Random.Range(0,audioClips.Length)]);
+    }
+
+    void enemyVisual()
+    {
+        targetEnemy = GetComponent<Enemy>();
+
+        var visualEffect = targetEnemy.emotion switch
+        {
+            Emotion.HAPPY => happyPsPrefab,
+            Emotion.ANGRY => angryPsPrefab,
+            Emotion.SURPRISED => surprisedVfxPrefab,
+            _ => happyPsPrefab,
+        };
     }
 
     // Update is called once per frame

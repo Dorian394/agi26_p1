@@ -147,3 +147,6 @@ MonoBehaviour:
   - {fileID: 8300000, guid: d3c34a7d0e055df4ebb73bb36079bc49, type: 3}
   - {fileID: 8300000, guid: 6303ac5ccd0ffc94dafa98561bfa504b, type: 3}
   - {fileID: 8300000, guid: 4e31da97793c07242956e20d65b2935e, type: 3}
+  happyPsPrefab: {fileID: 308890937851437130, guid: 2b012e4fc7c599a4d9df34e84b56aaf5, type: 3}
+  angryPsPrefab: {fileID: 5855242098376883280, guid: 8abc801a033babe448017dc8116dd29b, type: 3}
+  surprisedVfxPrefab: {fileID: 2353382060424102689, guid: bb9c816812c50364c94ce9c56f85445e, type: 3}
