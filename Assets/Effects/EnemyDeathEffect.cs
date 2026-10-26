@@ -21,6 +21,7 @@ public class EnemyDeathEffect : MonoBehaviour
     {
         audioSource = GetComponent<AudioSource>();
         audioSource.PlayOneShot(audioClips[UnityEngine.Random.Range(0,audioClips.Length)]);
+        enemyVisual();
     }
 
     void enemyVisual()
