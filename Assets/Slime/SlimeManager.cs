@@ -8,7 +8,7 @@ public class SlimeManager : MonoBehaviour
     [Header("Spawn Settings")]
     [SerializeField] private GameObject[] enemyPrefab;
     [SerializeField] private GameObject deathEffectPrefab;
-    [SerializeField] private float defaultSpawnInterval = 2f;
+    [SerializeField] private float defaultSpawnInterval = 1f;
     [SerializeField] private PathNode[] spawnNodes;
 
     [Header("Enemy Default Stats")]
@@ -20,30 +20,39 @@ public class SlimeManager : MonoBehaviour
     private Queue<GameObject> activeEnemies = new();
     private Emotion lastEmotion = Emotion.NEUTRAL;
     private float speed;
-    private float spawnInterval;
+    private int spawned = 0;
+    private PathNode spawnNode;
 
     void Start()
     {
-        spawnInterval = defaultSpawnInterval;
+        // Spawn node
+        spawnNode = spawnNodes[Random.Range(0, spawnNodes.Length)];
         speed = defaultSpeed;
-        nextSpawnTime = Time.time + spawnInterval;
+        nextSpawnTime = Time.time + defaultSpawnInterval;
     }
 
     void Update()
     {
         // Spawn a new enemy if possible
-        if (Time.time >= nextSpawnTime)
+        if (spawned < 4 && Time.time > nextSpawnTime)
         {
             SpawnEnemy();
-            nextSpawnTime = Time.time + spawnInterval;
-            spawnInterval *= 0.97f;
+            nextSpawnTime = Time.time + defaultSpawnInterval;
+            spawned += 1;
+        }
+
+        // Reset
+        if(spawned == 4 && activeEnemies.Count == 0)
+        {
+            spawned = 0;
+            spawnNode = spawnNodes[Random.Range(0, spawnNodes.Length)];
             speed += 0.7f;
         }
 
         // Destroy the nearest enemy if the corresponding emotion is shown
         if(activeEnemies.Count > 0) {
             var nearestEnemy = activeEnemies.Peek();
-            if (nearestEnemy.TryGetComponent<Enemy>(out var enemyScript))
+            if (nearestEnemy.TryGetComponent<Slime>(out var enemyScript))
             {
                 Emotion enemyEmotion = enemyScript.emotion;
                 if (EmotionBridge.GetEmotion() == enemyEmotion)
@@ -64,7 +73,7 @@ public class SlimeManager : MonoBehaviour
                 Destroy(enemy);
             }
             speed = defaultSpeed;
-            spawnInterval = defaultSpawnInterval;
+            spawned = 0;
             Debug.Log("RESET");
         }
     }
@@ -72,9 +81,6 @@ public class SlimeManager : MonoBehaviour
     private void SpawnEnemy()
     {
         if (enemyPrefab == null) return;
-
-        // Spawn node
-        PathNode spawnNode = spawnNodes[Random.Range(0, spawnNodes.Length)];
 
         // Emotion of the spawned enemy
         Emotion randomEmotion;
@@ -85,7 +91,7 @@ public class SlimeManager : MonoBehaviour
         lastEmotion = randomEmotion;
 
         // Spawning the enemy
-        GameObject newEnemyObj = Instantiate(enemyPrefab[(int)randomEmotion-1], spawnNode.transform.position, Quaternion.identity);
+        GameObject newEnemyObj = Instantiate(enemyPrefab[(int)randomEmotion - 1], spawnNode.transform.position, Quaternion.identity);
         if (newEnemyObj.TryGetComponent<Slime>(out var slimeScript))
         {
             slimeScript.Initialize(spawnNode, speed, randomEmotion);

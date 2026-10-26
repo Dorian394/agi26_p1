@@ -132,7 +132,7 @@ public class EmotionRecognitionRunner : MonoBehaviour
 
             if (useHardcodedThresholds && currentEmotion == Emotion.UNKNOWN)
             {
-                currentEmotion = detectEmotionHardcode(blendshapes);
+                currentEmotion = detectEmotionHardcodeOld(blendshapes);
             }
 
             if (useMachineLearning && currentEmotion == Emotion.UNKNOWN)
