@@ -61,6 +61,7 @@ public class SlimeManager : MonoBehaviour
                 Emotion enemyEmotion = enemyScript.emotion;
                 if (EmotionBridge.GetEmotion() == enemyEmotion)
                 {
+                    ScoreManager.addScore(25);
                     DeleteClosestEnemy();
                 }
             }
