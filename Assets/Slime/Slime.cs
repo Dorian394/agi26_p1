@@ -4,19 +4,20 @@ using UnityEngine.AI;
 
 public class Slime : MonoBehaviour
 {
-    [SerializeField] private PathNode target;
+    private PathNode target;
     public Emotion emotion;
     float speed;
-    MeshRenderer childMeshRenderer;
+    SlimeManager manager;
     private NavMeshAgent agent;
     private float animParamter = 0.0f;
     private float animSpeed = 2.5f; // radians per second? Or degrees per second? idk
 
-    public void Initialize(PathNode target, float speed, Emotion emotion)
+    public void Initialize(PathNode target, float speed, Emotion emotion, SlimeManager manager)
     {
         this.target = target;
         this.emotion = emotion;
         this.speed = speed;
+        this.manager = manager;
     }
 
     private void Start()
@@ -53,6 +54,8 @@ public class Slime : MonoBehaviour
     {
         if (target.Parent == null)
         {
+            manager.InflictDamages();
+            manager.DeleteClosestEnemy();
             return; // TODO call some kind of function for reaching destination.
         }
         target = target.Parent;

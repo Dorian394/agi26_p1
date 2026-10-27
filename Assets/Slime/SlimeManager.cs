@@ -13,6 +13,7 @@ public class SlimeManager : MonoBehaviour
 
     [Header("Enemy Default Stats")]
     [SerializeField] private float defaultSpeed = 3f;
+    [SerializeField] private float enemyDamages = 10.1f;
 
 
     [Header("Managing spawned enemies")]
@@ -22,6 +23,9 @@ public class SlimeManager : MonoBehaviour
     private float speed;
     private int spawned = 0;
     private PathNode spawnNode;
+
+    [Header("Health / Gameplay")]
+    [SerializeField] private HealthManager healthManager;
 
     void Start()
     {
@@ -57,9 +61,7 @@ public class SlimeManager : MonoBehaviour
                 Emotion enemyEmotion = enemyScript.emotion;
                 if (EmotionBridge.GetEmotion() == enemyEmotion)
                 {
-                    activeEnemies.Dequeue();
-                    SpawnDeathEffect(nearestEnemy.transform.position);
-                    Destroy(nearestEnemy);
+                    DeleteClosestEnemy();
                 }
             }
         }
@@ -94,11 +96,18 @@ public class SlimeManager : MonoBehaviour
         GameObject newEnemyObj = Instantiate(enemyPrefab[(int)randomEmotion - 1], spawnNode.transform.position, Quaternion.identity);
         if (newEnemyObj.TryGetComponent<Slime>(out var slimeScript))
         {
-            slimeScript.Initialize(spawnNode, speed, randomEmotion);
+            slimeScript.Initialize(spawnNode, speed, randomEmotion, this);
         }
 
         // Adding the enemy to the queue (for management)
         activeEnemies.Enqueue(newEnemyObj);
+    }
+
+    public void DeleteClosestEnemy()
+    {
+        var nearestEnemy = activeEnemies.Dequeue();
+        SpawnDeathEffect(nearestEnemy.transform.position);
+        Destroy(nearestEnemy);
     }
 
     private void SpawnDeathEffect(Vector3 position)
@@ -106,6 +115,11 @@ public class SlimeManager : MonoBehaviour
         if (deathEffectPrefab == null) return;
 
         GameObject newEffectObj = Instantiate(deathEffectPrefab, position, Quaternion.identity);
+    }
+
+    public void InflictDamages()
+    {
+        healthManager.inflictDamages(enemyDamages);
     }
 
     // Debug: draw spawn area
