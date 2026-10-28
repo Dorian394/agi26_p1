@@ -46,7 +46,7 @@ Material:
     - _HighlightFactor: 2
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _TileScale: 3
+    - _TileScale: 0.1
     - _USETILING: 1
     m_Colors:
     - _Tint: {r: 1, g: 0.9052824, b: 0.8584906, a: 1}
