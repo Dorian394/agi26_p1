@@ -29,15 +29,23 @@ public enum Emotion
 
 public class EmotionRecognitionRunner : MonoBehaviour
 {
+    [Header("Settings")]
     [SerializeField] private int width = 1080;
     [SerializeField] private int height = 720;
     [SerializeField] private int fps = 30;
     [SerializeField] TextAsset modelAsset;
-    [SerializeField] EmotionVisualizer visualizer;
     [SerializeField] private int camera_id;
-    [SerializeField] private EmotionUIBars uiBars = null;
     [SerializeField] private bool useHardcodedThresholds;
     [SerializeField] private bool useMachineLearning;
+    
+
+    [Header("Visualization")]
+    [SerializeField] EmotionVisualizer visualizer;
+    [SerializeField] private EmotionUIBars uiBars = null;
+    [SerializeField] private BlendshapeDisplayer blendshapeDisplayer = null;
+    
+
+
     bool trainModel = false;
 
     WebCamTexture webCamTexture;
@@ -129,6 +137,8 @@ public class EmotionRecognitionRunner : MonoBehaviour
             var blendshapes = result.faceBlendshapes[0].categories;
 
             currentEmotion = Emotion.UNKNOWN;
+
+            if (blendshapeDisplayer != null) blendshapeDisplayer.UpdateAllBlendshapes(blendshapes); // Display blendshape bars
 
             if (useHardcodedThresholds && currentEmotion == Emotion.UNKNOWN)
             {
