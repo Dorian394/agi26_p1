@@ -1647,7 +1647,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameOverScript
   scoreTextMesh: {fileID: 1500892070}
-  startScene: {fileID: 102900000, guid: 95e923a53db2b5446a5a46b5a1e4c215, type: 3}
+  startScene: NewScenes/Forest
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

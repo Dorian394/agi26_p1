@@ -29,28 +29,27 @@ public enum Emotion
 
 public class EmotionRecognitionRunner : MonoBehaviour
 {
+    [Header("Settings")]
     [SerializeField] private int width = 1080;
     [SerializeField] private int height = 720;
     [SerializeField] private int fps = 30;
     [SerializeField] TextAsset modelAsset;
-    [SerializeField] EmotionVisualizer visualizer;
     [SerializeField] private int camera_id;
-    [SerializeField] private EmotionUIBars uiBars = null;
-    [SerializeField] private bool useHardcodedThresholds;
-    [SerializeField] private bool useMachineLearning;
-    bool trainModel = false;
+    
+
+    [Header("Visualization")]
+    [SerializeField] EmotionVisualizer visualizer;
+    [SerializeField] private BlendshapeDisplayer blendshapeDisplayer = null;
+    
 
     WebCamTexture webCamTexture;
     FaceLandmarker faceLandmarker;
     TextureFrame textureFrame;
     Emotion currentEmotion;
-    ClassificationModel classificationModel;
 
     IEnumerator Start()
     {
         // Init
-        classificationModel = new ClassificationModel(trainModel, modelAsset);
-
         yield return CreateWebCamTexture();
         textureFrame = new TextureFrame(webCamTexture.width, webCamTexture.height, TextureFormat.RGBA32);
 
@@ -128,17 +127,9 @@ public class EmotionRecognitionRunner : MonoBehaviour
 
             var blendshapes = result.faceBlendshapes[0].categories;
 
-            currentEmotion = Emotion.UNKNOWN;
+            if (blendshapeDisplayer != null) blendshapeDisplayer.UpdateAllBlendshapes(blendshapes); // Display blendshape bars
 
-            if (useHardcodedThresholds && currentEmotion == Emotion.UNKNOWN)
-            {
-                currentEmotion = detectEmotionHardcodeOld(blendshapes);
-            }
-
-            if (useMachineLearning && currentEmotion == Emotion.UNKNOWN)
-            {
-                currentEmotion = detectEmotionMachineLearning(blendshapes);
-            }
+            currentEmotion = detectEmotionHardcodeOld(blendshapes);
 
             visualizer.UpdateVisualizer(result.faceLandmarks[0].landmarks, currentEmotion);
             EmotionBridge.SetEmotion(currentEmotion);
@@ -195,44 +186,9 @@ public class EmotionRecognitionRunner : MonoBehaviour
         {
             return Emotion.ANGRY;
         }
-        else if (smile < 0.4 && jawOpen < 0.4 && browUp < 0.4 && browDown < 0.4)
-        {
-            return Emotion.NEUTRAL;
-        }
         else
         {
-            return Emotion.UNKNOWN;
-        }
-    }
-
-    private Emotion detectEmotionMachineLearning(List<Category> blendshapes)
-    {
-        // Recognize emotion
-        float[] emotionValues = classificationModel.getEmotions(blendshapes);
-
-        if(uiBars != null) uiBars.UpdateEmotionProbabilities(emotionValues);
-
-        int emotion = 0;
-        int counter = 0;
-        for (int i = 1; i < emotionValues.Length; i++)
-        {
-            if (emotionValues[i] > 0.15)
-            {
-                counter++;
-                if (emotionValues[i] > 0.5)
-                {
-                    emotion = i;
-                }
-            }
-        }
-
-        if(counter > 1)
-        {
             return Emotion.NEUTRAL;
-        }
-        else
-        {
-            return (Emotion)emotion;
         }
     }
 
