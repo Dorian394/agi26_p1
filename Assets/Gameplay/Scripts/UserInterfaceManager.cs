@@ -12,7 +12,7 @@ public class UserInterfaceManager : MonoBehaviour
     private float defaultHealthBarWidth;
 
     [Header("Game Over")]
-    [SerializeField] private SceneAsset gameOverScene;
+    [SerializeField] private string gameOverScene;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -41,7 +41,7 @@ public class UserInterfaceManager : MonoBehaviour
 
     public void setGameOverScreen(bool state)
     {
-        SceneManager.LoadScene(gameOverScene.name);
+        SceneManager.LoadScene(gameOverScene);
         GameOverScript.UpdateGameOverScreen();
     }
 

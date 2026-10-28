@@ -499,7 +499,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UserInterfaceManager
   healthBar: {fileID: 1078283036}
   healthText: {fileID: 2046526612}
-  gameOverScene: {fileID: 102900000, guid: dfd4f1eebde033744ab628ab054f6854, type: 3}
+  gameOverScene: NewScenes/GameOver
 --- !u!4 &445181231
 Transform:
   m_ObjectHideFlags: 0

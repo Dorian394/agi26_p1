@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 public class GameOverScript : MonoBehaviour
 {
     [SerializeField] private TextMeshPro scoreTextMesh;
-    [SerializeField] private SceneAsset startScene;
+    [SerializeField] private string startScene;
     private static GameOverScript instance;
     private static bool needUpdate = false;
 
@@ -34,6 +34,6 @@ public class GameOverScript : MonoBehaviour
 
     private void RestartGame()
     {
-        SceneManager.LoadScene(startScene.name);
+        SceneManager.LoadScene(startScene);
     } 
 }
