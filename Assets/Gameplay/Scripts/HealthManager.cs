@@ -18,7 +18,8 @@ public class HealthManager : MonoBehaviour
     public bool inflictDamages(float damages)
     {
         health -= damages;
-        userInterfaceManager.setHealthBar(health / maxHealth);
+        userInterfaceManager.setHealthBarSize(health / maxHealth);
+        userInterfaceManager.setHealthBarText(health, maxHealth);
 
         if (health < 0)
         {
