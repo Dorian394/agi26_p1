@@ -86,7 +86,7 @@ public class MusicManager : MonoBehaviour
     private int NextClip(int currentClip)
     {
         int rand = Random.Range(0, clipConnections[currentClip].Sum());
-        for (int i = 0; i < clipConnections[i].Length; i++)
+        for (int i = 0; i < clipConnections[currentClip].Length; i++)
         {
             rand -= clipConnections[currentClip][i];
             if (rand < 0)
