@@ -231,7 +231,6 @@ MonoBehaviour:
   - {fileID: 2785379729249473448, guid: 29eec1872c9f88a47b5760d2ec135b78, type: 3}
   - {fileID: 5169049319581381038, guid: d179fc0e635232c4684e701e36c80d37, type: 3}
   - {fileID: 5296632536598470195, guid: 3ca3a35efe7aa96448369de60215bc85, type: 3}
-  deathEffectPrefab: {fileID: 0}
   defaultSpawnInterval: 0.5
   spawnNodes:
   - {fileID: 1900324399}
@@ -240,8 +239,10 @@ MonoBehaviour:
   - {fileID: 1865884659}
   - {fileID: 1990869828}
   - {fileID: 1531777659}
-  defaultSpeed: 8
-  enemyDamages: 60
+  deathEffectPrefab: {fileID: 2762440166408022683, guid: e80198a760691e64eacea7bdaa8714f6, type: 3}
+  viewCamera: {fileID: 1066074967}
+  defaultSpeed: 5
+  enemyDamages: 10.1
   healthManager: {fileID: 399293708}
 --- !u!4 &107958522
 Transform:

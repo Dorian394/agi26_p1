@@ -1072,6 +1072,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2364821955108499101, guid: 93b86bd8e2e98794cabfe25ca297e89f, type: 3}
+      propertyPath: m_RendererIndex
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3248649743353551637, guid: 93b86bd8e2e98794cabfe25ca297e89f, type: 3}
       propertyPath: m_Name
       value: Camera Manager

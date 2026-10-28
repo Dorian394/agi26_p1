@@ -1,4 +1,5 @@
 using System;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -11,6 +12,7 @@ public class Slime : MonoBehaviour
     private NavMeshAgent agent;
     private float animParamter = 0.0f;
     private float animSpeed = 2.5f; // radians per second? Or degrees per second? idk
+    private float animOffset;
 
     public void Initialize(PathNode target, float speed, Emotion emotion, SlimeManager manager)
     {
@@ -18,6 +20,7 @@ public class Slime : MonoBehaviour
         this.emotion = emotion;
         this.speed = speed;
         this.manager = manager;
+        animOffset = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
     }
 
     private void Start()
@@ -44,8 +47,8 @@ public class Slime : MonoBehaviour
             }
         }
 
-        var verticalScale =   (float)(1.125 + Math.Sin(animParamter)     * 0.25);
-        var horizontalScale = (float)(1.1   - Math.Sin(animParamter+0.1) * 0.2);
+        var verticalScale =   (float)(1.125 + Math.Sin(animOffset + animParamter)     * 0.25);
+        var horizontalScale = (float)(1.1   - Math.Sin(animOffset + animParamter + 0.1) * 0.2);
         animParamter += Time.deltaTime * animSpeed;
         transform.localScale = new Vector3(horizontalScale, verticalScale, horizontalScale);
     }

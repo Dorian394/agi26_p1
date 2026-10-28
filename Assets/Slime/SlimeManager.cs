@@ -7,9 +7,11 @@ public class SlimeManager : MonoBehaviour
 {
     [Header("Spawn Settings")]
     [SerializeField] private GameObject[] enemyPrefab;
-    [SerializeField] private GameObject deathEffectPrefab;
     [SerializeField] private float defaultSpawnInterval = 1f;
     [SerializeField] private PathNode[] spawnNodes;
+    [Header("Death effect")]
+    [SerializeField] private GameObject deathEffectPrefab;
+    [SerializeField] private GameObject viewCamera;
 
     [Header("Enemy Default Stats")]
     [SerializeField] private float defaultSpeed = 3f;
@@ -107,15 +109,30 @@ public class SlimeManager : MonoBehaviour
     public void DeleteClosestEnemy()
     {
         var nearestEnemy = activeEnemies.Dequeue();
-        SpawnDeathEffect(nearestEnemy.transform.position);
+        if (nearestEnemy.TryGetComponent<Slime>(out var enemyScript))
+        {
+            Emotion enemyEmotion = enemyScript.emotion;
+            Vector3 directionToCamera = (viewCamera.transform.position - nearestEnemy.transform.position).normalized;
+            Vector3 spawnPosition = nearestEnemy.transform.position +
+                        (0.75f * nearestEnemy.transform.up * nearestEnemy.transform.localScale.y) +
+                        (directionToCamera * nearestEnemy.transform.localScale.x * 3f);
+            SpawnDeathEffect(spawnPosition, enemyEmotion);
+        } else
+        {
+            SpawnDeathEffect(nearestEnemy.transform.position, Emotion.UNKNOWN);
+        }
         Destroy(nearestEnemy);
     }
 
-    private void SpawnDeathEffect(Vector3 position)
+    private void SpawnDeathEffect(Vector3 position, Emotion emotion)
     {
         if (deathEffectPrefab == null) return;
 
         GameObject newEffectObj = Instantiate(deathEffectPrefab, position, Quaternion.identity);
+        if (newEffectObj.TryGetComponent<EnemyDeathEffect>(out var deathEffectScript))
+        {
+            deathEffectScript.Initialize(emotion);
+        }
     }
 
     public void InflictDamages()

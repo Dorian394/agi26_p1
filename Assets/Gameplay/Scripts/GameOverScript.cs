@@ -9,15 +9,17 @@ public class GameOverScript : MonoBehaviour
     [SerializeField] private TextMeshPro scoreTextMesh;
     [SerializeField] private SceneAsset startScene;
     private static GameOverScript instance;
+    private static bool needUpdate = false;
 
     private void Start()
     {
         instance = this;
-        UpdateGameOverScreen();
+        if(needUpdate) UpdateGameOverScreen();
     }
 
     public static void UpdateGameOverScreen()
     {
+        needUpdate = true;
         if (!instance) return;
         if (instance.scoreTextMesh != null)
         {
@@ -25,7 +27,8 @@ public class GameOverScript : MonoBehaviour
         }
         if (instance.startScene != null)
         {
-            instance.Invoke("RestartGame", 3f);
+            needUpdate = false;
+            instance.Invoke("RestartGame", 20f);
         }
     }
 
