@@ -11,13 +11,6 @@ public class EnemyDeathEffect : MonoBehaviour
     [Header("Lifetime")]
     private float endTime;
     
-    
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        endTime = Time.time + 1f; // Default value   
-    }
-
     public void Initialize(Emotion emotion)
     {
         // Audio
@@ -39,7 +32,7 @@ public class EnemyDeathEffect : MonoBehaviour
                 break;
             case Emotion.SURPRISED: 
                 particleObjects[2].SetActive(true);
-                lifetime = Math.Max(lifetime, 4f);
+                lifetime = Math.Max(lifetime, 2f);
                 break;
         }
         endTime = Time.time + lifetime;
