@@ -360,6 +360,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 2967956249612060931}
     m_Modifications:
     - target: {fileID: 1783362530397284880, guid: 8abc801a033babe448017dc8116dd29b, type: 3}
+      propertyPath: looping
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1783362530397284880, guid: 8abc801a033babe448017dc8116dd29b, type: 3}
       propertyPath: lengthInSec
       value: 1.5
       objectReference: {fileID: 0}
@@ -446,6 +450,10 @@ PrefabInstance:
     - target: {fileID: 6230090567983448737, guid: 8abc801a033babe448017dc8116dd29b, type: 3}
       propertyPath: m_ConstrainProportionsScale
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7748024491940297789, guid: 8abc801a033babe448017dc8116dd29b, type: 3}
+      propertyPath: looping
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7748024491940297789, guid: 8abc801a033babe448017dc8116dd29b, type: 3}
       propertyPath: lengthInSec

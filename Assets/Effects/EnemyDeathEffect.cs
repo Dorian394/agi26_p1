@@ -35,22 +35,19 @@ public class EnemyDeathEffect : MonoBehaviour
                 break;
             case Emotion.ANGRY: 
                 particleObjects[1].SetActive(true);
-                lifetime = Math.Max(lifetime, 6f);
+                lifetime = Math.Max(lifetime, 10f);
                 break;
             case Emotion.SURPRISED: 
                 particleObjects[2].SetActive(true);
                 lifetime = Math.Max(lifetime, 4f);
                 break;
         }
-        Debug.Log(lifetime);
         endTime = Time.time + lifetime;
     }
 
     // Update is called once per frame
     void Update()
     {
-        Debug.Log(Time.time);
-        Debug.Log(endTime);
         if (Time.time >= endTime)
         {
             // We self-destruct to clear memory.

@@ -398,7 +398,7 @@ public class ClassificationModel
             parameters[i].data = data.weightsAndBiases[i];
         }
 
-        Debug.Log($"The model was successfully loaded. ({parameters.Length} parameters).");
+        // Debug.Log($"The model was successfully loaded. ({parameters.Length} parameters).");
     }
 
     // Initialize the Neural Network Architecture
