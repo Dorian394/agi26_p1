@@ -14,18 +14,31 @@ public class CameraManager : MonoBehaviour
     [SerializeField] SRDManager SRDisplayManager;
     SRD2DView _srd2DView;
     
+    
+    [SerializeField]
+    private Camera _srdFixedCamera;
+    private RenderTexture _fixedCameraTexture;
+    private SRDCameras _srdCameras;
+
 
     void Start()
     {
         if (useSpatialRealityDisplay)
         {
+            _srdCameras = new SRDCameras(SRDisplayManager);
             mainCamera.SetActive(false);
             SRDisplayManager.gameObject.SetActive(true);
             if (SRDisplayManager.Init2DView())
             {
                 _srd2DView = SRDisplayManager.SRD2DView;
                 _srd2DView.Show(true);
+                _srd2DView.SetSourceTexture(SRD2DView.SRDTextureType.Custom);
+
                 //_srd2DView.SetFullScreen(true);
+                _srdFixedCamera.CopyFrom(_srdCameras.LeftEyeCamera);
+                _srdFixedCamera.targetTexture = _fixedCameraTexture;
+                SRDisplayManager.SRD2DView.CustomTexture = _fixedCameraTexture;
+                SRDisplayManager.SRD2DView.SetSourceTexture(SRD2DView.SRDTextureType.Custom);
             }
             
         }
