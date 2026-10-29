@@ -8,14 +8,17 @@ public class SlimeManager : MonoBehaviour
     [Header("Spawn Settings")]
     [SerializeField] private GameObject[] enemyPrefab;
     [SerializeField] private float defaultSpawnInterval = 1f;
+    [SerializeField] private int wavePerStage = 4;
     [SerializeField] private PathNode[] spawnNodes;
+    private int waveSize = 1;
+    private int wave = 0;
     [Header("Death effect")]
     [SerializeField] private GameObject deathEffectPrefab;
     [SerializeField] private GameObject viewCamera;
 
     [Header("Enemy Default Stats")]
     [SerializeField] private float defaultSpeed = 3f;
-    [SerializeField] private float enemyDamages = 10.1f;
+    [SerializeField] private float enemyDamages = 10.01f;
 
 
     [Header("Managing spawned enemies")]
@@ -40,19 +43,27 @@ public class SlimeManager : MonoBehaviour
     void Update()
     {
         // Spawn a new enemy if possible
-        if (spawned < 4 && Time.time > nextSpawnTime)
+        if (spawned < waveSize && Time.time > nextSpawnTime)
         {
             SpawnEnemy();
             nextSpawnTime = Time.time + defaultSpawnInterval;
             spawned += 1;
         }
 
-        // Reset
-        if(spawned == 4 && activeEnemies.Count == 0)
+        // When all enemies are destroyed, start the new wave
+        if(spawned == waveSize && activeEnemies.Count == 0 && Time.time > nextSpawnTime)
         {
             spawned = 0;
+            wave++;
             spawnNode = spawnNodes[Random.Range(0, spawnNodes.Length)];
             speed += 0.7f;
+        }
+
+        // If enough waves have passed, increment the size of the wave
+        if (wave == wavePerStage)
+        {
+            wave = 0;
+            waveSize++;
         }
 
         // Destroy the nearest enemy if the corresponding emotion is shown

@@ -231,7 +231,8 @@ MonoBehaviour:
   - {fileID: 2785379729249473448, guid: 29eec1872c9f88a47b5760d2ec135b78, type: 3}
   - {fileID: 5169049319581381038, guid: d179fc0e635232c4684e701e36c80d37, type: 3}
   - {fileID: 5296632536598470195, guid: 3ca3a35efe7aa96448369de60215bc85, type: 3}
-  defaultSpawnInterval: 0.5
+  defaultSpawnInterval: 0.9
+  wavePerStage: 4
   spawnNodes:
   - {fileID: 1900324399}
   - {fileID: 1368964974}
@@ -416,7 +417,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1078283037}
-  - {fileID: 1301555111}
   m_Father: {fileID: 1501534339}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &410501689 stripped
@@ -437,7 +437,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
-  m_RequiresDepthTextureOption: 2
+  m_RequiresDepthTextureOption: 1
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 0
   m_Cameras: []
@@ -1226,7 +1226,8 @@ Transform:
   m_LocalPosition: {x: -10.212767, y: 1.0999986, z: 0}
   m_LocalScale: {x: 21.276596, y: 2, z: 1.4285713}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1301555111}
   m_Father: {fileID: 399293707}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1105315861
@@ -1417,11 +1418,11 @@ Transform:
   m_GameObject: {fileID: 1301555110}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.1000004, z: 0}
-  m_LocalScale: {x: 20.42553, y: 0.20000005, z: 1.1428571}
+  m_LocalPosition: {x: 0.48000005, y: 0, z: 0}
+  m_LocalScale: {x: 0.96, y: 0.100000024, z: 0.8}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 399293707}
+  m_Father: {fileID: 1078283037}
   m_LocalEulerAnglesHint: {x: 0, y: 45, z: 0}
 --- !u!65 &1301555112
 BoxCollider:
@@ -1849,7 +1850,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
-  m_RequiresDepthTextureOption: 2
+  m_RequiresDepthTextureOption: 1
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 0
   m_Cameras: []
