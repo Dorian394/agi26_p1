@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Scripting;
+using UnityEngine.SceneManagement;
 
 public class EnemyManager : MonoBehaviour
 {
@@ -164,11 +165,13 @@ public class EnemyManager : MonoBehaviour
             }
         }
 
-        ResetDifficulty();
-        nextSpawnTime = Time.time + spawnInterval;
+        // ResetDifficulty();
+        // nextSpawnTime = Time.time + spawnInterval;
 
-        if (target != null)
-            target.Restart();
+        // if (target != null)
+        //     target.Restart();
+
+        SceneManager.LoadScene("StartMenu");
 
         Debug.Log("RESET");
     }
