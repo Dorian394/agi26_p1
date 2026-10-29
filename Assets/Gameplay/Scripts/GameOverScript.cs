@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 public class GameOverScript : MonoBehaviour
@@ -15,6 +16,14 @@ public class GameOverScript : MonoBehaviour
     {
         instance = this;
         if(needUpdate) UpdateGameOverScreen();
+    }
+
+    private void Update()
+    {
+        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+        {
+            SceneManager.LoadScene("StartMenu");
+        }
     }
 
     public static void UpdateGameOverScreen()
