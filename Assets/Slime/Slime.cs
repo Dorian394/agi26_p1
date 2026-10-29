@@ -11,16 +11,17 @@ public class Slime : MonoBehaviour
     SlimeManager manager;
     private NavMeshAgent agent;
     private float animParamter = 0.0f;
-    private float animSpeed = 2.5f; // radians per second? Or degrees per second? idk
+    private float animSpeed = 0.75f; // radians per second? Or degrees per second? idk
     private float animOffset;
 
-    public void Initialize(PathNode target, float speed, Emotion emotion, SlimeManager manager)
+    public void Initialize(PathNode target, float speed, Emotion emotion, SlimeManager manager, bool useRandomOffset = true)
     {
         this.target = target;
         this.emotion = emotion;
         this.speed = speed;
         this.manager = manager;
-        animOffset = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+        if (useRandomOffset) animOffset = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+        else animOffset = 0;
     }
 
     private void Start()
@@ -49,13 +50,13 @@ public class Slime : MonoBehaviour
 
         var verticalScale =   (float)(1.125 + Math.Sin(animOffset + animParamter)     * 0.25);
         var horizontalScale = (float)(1.1   - Math.Sin(animOffset + animParamter + 0.1) * 0.2);
-        animParamter += Time.deltaTime * animSpeed;
+        animParamter += Time.deltaTime * animSpeed * speed;
         transform.localScale = new Vector3(horizontalScale, verticalScale, horizontalScale);
     }
 
     void NextNode()
     {
-        if (target.Parent == null)
+        if (target.Parent == null && manager != null)
         {
             manager.InflictDamages();
             manager.DeleteClosestEnemy();

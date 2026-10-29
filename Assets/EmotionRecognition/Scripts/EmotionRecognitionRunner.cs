@@ -129,7 +129,7 @@ public class EmotionRecognitionRunner : MonoBehaviour
 
             if (blendshapeDisplayer != null) blendshapeDisplayer.UpdateAllBlendshapes(blendshapes); // Display blendshape bars
 
-            currentEmotion = detectEmotionHardcodeOld(blendshapes);
+            currentEmotion = detectEmotionV3(blendshapes);
 
             visualizer.UpdateVisualizer(result.faceLandmarks[0].landmarks, currentEmotion);
             EmotionBridge.SetEmotion(currentEmotion);
@@ -156,7 +156,7 @@ public class EmotionRecognitionRunner : MonoBehaviour
         faceLandmarker?.Close();
     }
 
-    private Emotion detectEmotionHardcodeOld(List<Category> blendshapes)
+    private Emotion detectEmotionV1(List<Category> blendshapes)
     {
         // Get some blendshape values
         float smileLeft = GetBlendshapeValue(blendshapes, "mouthSmileLeft");
@@ -192,7 +192,7 @@ public class EmotionRecognitionRunner : MonoBehaviour
         }
     }
 
-    private Emotion detectEmotionHardcode(List<Category> blendshapes)
+    private Emotion detectEmotionV2(List<Category> blendshapes)
     {
         // FACS-inspired facial expression recognition.
         float mouthSmileLeft = GetBlendshapeValue(blendshapes, "mouthSmileLeft");
@@ -315,5 +315,66 @@ public class EmotionRecognitionRunner : MonoBehaviour
         }
 
         return detectedEmotion;
+    }
+
+    private Emotion detectEmotionV3(List<Category> blendshapes)
+    {
+        // HAPPY
+        float smileLeft = GetBlendshapeValue(blendshapes, "mouthSmileLeft");
+        float smileRight = GetBlendshapeValue(blendshapes, "mouthSmileRight");
+        float mouthUpperUpLeft = GetBlendshapeValue(blendshapes, "mouthUpperUpLeft");
+        float mouthUpperUpRight = GetBlendshapeValue(blendshapes, "mouthUpperUpRight");
+
+        // ANGRY
+        float browDownLeft = GetBlendshapeValue(blendshapes, "browDownLeft");
+        float browDownRight = GetBlendshapeValue(blendshapes, "browDownRight");
+        float eyeBlinkLeft = GetBlendshapeValue(blendshapes, "eyeBlinkLeft");
+        float eyeBlinkRight = GetBlendshapeValue(blendshapes, "eyeBlinkRight");
+        float mouthShrugLower = GetBlendshapeValue(blendshapes, "mouthShrugLower");
+        float eyeSquintLeft = GetBlendshapeValue(blendshapes, "eyeSquintLeft");
+        float eyeSquintRight = GetBlendshapeValue(blendshapes, "eyeSquintRight");
+        float mouthPucker = GetBlendshapeValue(blendshapes, "mouthPucker");
+
+        // SURPRISED
+        float jawOpen = GetBlendshapeValue(blendshapes, "jawOpen");
+        float browInnerUp = GetBlendshapeValue(blendshapes, "browInnerUp");
+        float browOuterUpLeft = GetBlendshapeValue(blendshapes, "browOuterUpLeft");
+        float browOuterUpRight = GetBlendshapeValue(blendshapes, "browOuterUpRight");
+        float mouthFunnel = GetBlendshapeValue(blendshapes, "mouthFunnel");
+
+
+        // AVERAGES
+        // Happy
+        float smile = (smileLeft + smileRight) / 2f;
+        float mouthUpperUp = (mouthUpperUpLeft + mouthUpperUpRight) / 2f;
+        float eyeSquint = (eyeSquintLeft + eyeSquintRight) / 2f;
+
+        // Angry
+        float browDown = (browDownLeft + browDownRight) / 2f;
+        float eyeBlink = (eyeBlinkLeft + eyeBlinkRight) / 2f;
+
+        // Surprised
+        float browUp = (browInnerUp + browOuterUpLeft + browOuterUpRight) / 3f;
+
+        // Coeff
+        float angryCoeff = (browDown + eyeBlink + eyeSquint) / 3f;
+
+        // Recognize emotion 
+        if ((smile > 0.5f || mouthUpperUp > 0.4f) && jawOpen < 0.5f && angryCoeff < 0.5f)
+        {
+            return Emotion.HAPPY;
+        }
+        else if ((jawOpen > 0.3f || browUp > 0.5f || mouthFunnel > 0.6f || mouthPucker > 0.7f) && (eyeBlink < 0.55f && eyeSquint < 0.55f && browDown < 0.45f))
+        {
+            return Emotion.SURPRISED;
+        }
+        else if (browDown > 0.45f || (5f * eyeBlink + 4f * eyeSquint) / 9f > 0.65f || mouthShrugLower > 0.8f)
+        {
+            return Emotion.ANGRY;
+        }
+        else
+        {
+            return Emotion.NEUTRAL;
+        }
     }
 }
