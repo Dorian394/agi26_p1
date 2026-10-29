@@ -2,6 +2,7 @@ using NUnit.Framework;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class SlimeManager : MonoBehaviour
 {
@@ -83,14 +84,7 @@ public class SlimeManager : MonoBehaviour
         // Reset
         if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
-            while(activeEnemies.Count > 0)
-            {
-                GameObject enemy = activeEnemies.Dequeue();
-                Destroy(enemy);
-            }
-            speed = defaultSpeed;
-            spawned = 0;
-            Debug.Log("RESET");
+            SceneManager.LoadScene("StartMenu");
         }
     }
 

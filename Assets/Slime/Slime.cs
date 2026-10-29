@@ -14,13 +14,14 @@ public class Slime : MonoBehaviour
     private float animSpeed = 0.75f; // radians per second? Or degrees per second? idk
     private float animOffset;
 
-    public void Initialize(PathNode target, float speed, Emotion emotion, SlimeManager manager)
+    public void Initialize(PathNode target, float speed, Emotion emotion, SlimeManager manager, bool useRandomOffset = true)
     {
         this.target = target;
         this.emotion = emotion;
         this.speed = speed;
         this.manager = manager;
-        animOffset = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+        if (useRandomOffset) animOffset = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+        else animOffset = 0;
     }
 
     private void Start()
@@ -55,7 +56,7 @@ public class Slime : MonoBehaviour
 
     void NextNode()
     {
-        if (target.Parent == null)
+        if (target.Parent == null && manager != null)
         {
             manager.InflictDamages();
             manager.DeleteClosestEnemy();

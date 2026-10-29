@@ -368,7 +368,7 @@ public class EmotionRecognitionRunner : MonoBehaviour
         {
             return Emotion.SURPRISED;
         }
-        else if (browDown > 0.45f || (5f * eyeBlink + 4f * eyeSquint) / 9f > 0.65f || mouthShrugLower > 0.8f || mouthPucker > 0.5f)
+        else if (browDown > 0.45f || (5f * eyeBlink + 4f * eyeSquint) / 9f > 0.65f || mouthShrugLower > 0.8f)
         {
             return Emotion.ANGRY;
         }
