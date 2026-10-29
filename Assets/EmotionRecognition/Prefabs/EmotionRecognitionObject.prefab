@@ -126,6 +126,6 @@ MonoBehaviour:
   height: 720
   fps: 60
   modelAsset: {fileID: 4900000, guid: 5838e83559205ed6b9bdd94fa57e9a18, type: 3}
-  camera_id: 0
+  camera_id: 5
   visualizer: {fileID: 6917543313817503281}
   blendshapeDisplayer: {fileID: 0}
