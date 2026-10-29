@@ -1,3 +1,4 @@
+using SRD.Core;
 using UnityEngine;
 
 /*
@@ -10,19 +11,28 @@ public class CameraManager : MonoBehaviour
 {
     [SerializeField] private bool useSpatialRealityDisplay;
     [SerializeField] GameObject mainCamera;
-    [SerializeField] GameObject SRDisplayManager;
+    [SerializeField] SRDManager SRDisplayManager;
+    SRD2DView _srd2DView;
+    
 
     void Start()
     {
         if (useSpatialRealityDisplay)
         {
             mainCamera.SetActive(false);
-            SRDisplayManager.SetActive(true);
+            SRDisplayManager.gameObject.SetActive(true);
+            if (SRDisplayManager.Init2DView())
+            {
+                _srd2DView = SRDisplayManager.SRD2DView;
+                _srd2DView.Show(true);
+                //_srd2DView.SetFullScreen(true);
+            }
+            
         }
         else
         {
             mainCamera.SetActive(true);
-            SRDisplayManager.SetActive(false);
+            SRDisplayManager.gameObject.SetActive(false);
         }
     }
 }
