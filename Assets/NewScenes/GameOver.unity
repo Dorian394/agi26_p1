@@ -1126,7 +1126,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4299727878552489962, guid: 93b86bd8e2e98794cabfe25ca297e89f, type: 3}
       propertyPath: useSpatialRealityDisplay
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
