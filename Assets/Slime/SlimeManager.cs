@@ -20,6 +20,7 @@ public class SlimeManager : MonoBehaviour
     [Header("Enemy Default Stats")]
     [SerializeField] private float defaultSpeed = 3f;
     [SerializeField] private float enemyDamages = 10.01f;
+    [SerializeField] private float speedIncrease = 1.4f;
 
 
     [Header("Managing spawned enemies")]
@@ -57,7 +58,7 @@ public class SlimeManager : MonoBehaviour
             spawned = 0;
             wave++;
             spawnNode = spawnNodes[Random.Range(0, spawnNodes.Length)];
-            speed += 0.7f;
+            speed += speedIncrease;
         }
 
         // If enough waves have passed, increment the size of the wave
