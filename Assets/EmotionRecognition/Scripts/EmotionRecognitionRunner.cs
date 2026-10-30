@@ -6,15 +6,10 @@
 using Mediapipe.Tasks.Components.Containers;
 using Mediapipe.Tasks.Vision.FaceLandmarker;
 using Mediapipe.Unity.Experimental;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using Unity.Collections;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 
 public enum Emotion
 {
@@ -44,6 +39,8 @@ public class EmotionRecognitionRunner : MonoBehaviour
     [Header("Visualization")]
     [SerializeField] EmotionVisualizer visualizer;
     [SerializeField] private BlendshapeDisplayer blendshapeDisplayer = null;
+
+    [SerializeField] private int version = 3;
     
 
     WebCamTexture webCamTexture;
@@ -133,7 +130,18 @@ public class EmotionRecognitionRunner : MonoBehaviour
 
             if (blendshapeDisplayer != null) blendshapeDisplayer.UpdateAllBlendshapes(blendshapes); // Display blendshape bars
 
-            currentEmotion = detectEmotionV3(blendshapes);
+            switch (version) 
+            {
+                case 1: 
+                    currentEmotion = detectEmotionV1(blendshapes);
+                    break;
+                case 2: 
+                    currentEmotion = detectEmotionV2(blendshapes);
+                    break;
+                default: 
+                    currentEmotion = detectEmotionV3(blendshapes);
+                    break;
+            }
 
             visualizer.UpdateVisualizer(result.faceLandmarks[0].landmarks, currentEmotion);
             EmotionBridge.SetEmotion(currentEmotion);
