@@ -27,6 +27,10 @@ public enum Emotion
     
 }
 
+public class CameraSelectionAttribute : PropertyAttribute
+{
+}
+
 public class EmotionRecognitionRunner : MonoBehaviour
 {
     [Header("Settings")]
@@ -34,7 +38,7 @@ public class EmotionRecognitionRunner : MonoBehaviour
     [SerializeField] private int height = 720;
     [SerializeField] private int fps = 30;
     [SerializeField] TextAsset modelAsset;
-    [SerializeField] private int camera_id;
+    [SerializeField] [CameraSelection] private int camera_id;
     
 
     [Header("Visualization")]
