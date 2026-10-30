@@ -13,6 +13,7 @@ public class SlimeManager : MonoBehaviour
     [SerializeField] private PathNode[] spawnNodes;
     private int waveSize = 1;
     private int wave = 0;
+
     [Header("Death effect")]
     [SerializeField] private GameObject deathEffectPrefab;
     [SerializeField] private GameObject viewCamera;
@@ -22,11 +23,11 @@ public class SlimeManager : MonoBehaviour
     [SerializeField] private float enemyDamages = 10.01f;
     [SerializeField] private float speedIncrease = 1.4f;
 
-
     [Header("Managing spawned enemies")]
     private float nextSpawnTime;
     private Queue<GameObject> activeEnemies = new();
     private Emotion lastEmotion = Emotion.NEUTRAL;
+    private bool canSpawnAngry = true;
     private float speed;
     private int spawned = 0;
     private PathNode spawnNode;
@@ -44,6 +45,19 @@ public class SlimeManager : MonoBehaviour
 
     void Update()
     {
+        if (Keyboard.current != null)
+        {
+            if (Keyboard.current.dKey.wasPressedThisFrame)
+            {
+                canSpawnAngry = false;
+            }
+
+            if (Keyboard.current.eKey.wasPressedThisFrame)
+            {
+                canSpawnAngry = true;
+            }
+        }
+
         // Spawn a new enemy if possible
         if (spawned < waveSize && Time.time > nextSpawnTime)
         {
@@ -98,7 +112,8 @@ public class SlimeManager : MonoBehaviour
         do
         {
             randomEmotion = (Emotion)Random.Range(1, 4); // The 1-3 range is hardcoded here, bad form but it works for now
-        } while (randomEmotion == lastEmotion);
+        } while (randomEmotion == lastEmotion || (!canSpawnAngry && randomEmotion == Emotion.ANGRY));
+
         lastEmotion = randomEmotion;
 
         // Spawning the enemy
